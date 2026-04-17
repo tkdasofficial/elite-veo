@@ -3,40 +3,37 @@ import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatMessageComponent from "@/components/chat/ChatMessage";
-import ChatInput from "@/components/chat/ChatInput";
+import ChatInput, { ModelTier } from "@/components/chat/ChatInput";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ChatMessage } from "@/types/chat";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const generateLocalId = () => "local-" + Math.random().toString(36).slice(2, 10);
 
-/* ─────────────────────────────────────────────
-   Working state sequences by task type
-───────────────────────────────────────────── */
-const STATES_CODE     = ["Thinking...", "Planning...", "Building...", "Writing...", "Running...", "Exporting..."];
-const STATES_VIDEO    = ["Thinking...", "Analyzing...", "Creating...", "Writing...", "Rendering..."];
-const STATES_RESEARCH = ["Thinking...", "Searching...", "Researching...", "Analyzing...", "Working..."];
-const STATES_EDIT     = ["Thinking...", "Analyzing...", "Editing...", "Working..."];
-const STATES_DEFAULT  = ["Thinking...", "Analyzing...", "Working...", "Creating..."];
+const STATES_IMAGE    = ["Thinking...", "Designing...", "Generating...", "Rendering..."];
+const STATES_RESEARCH = ["Thinking...", "Searching...", "Researching...", "Analyzing..."];
+const STATES_DEFAULT  = ["Thinking...", "Analyzing...", "Working..."];
 
-function getWorkingStates(prompt: string, isEdit: boolean): string[] {
-  if (isEdit) return STATES_EDIT;
-  const p = prompt.toLowerCase();
-  if (/html|css|javascript|website|code|app|build|create a\s+\w+\s+(site|page|app)/.test(p)) return STATES_CODE;
-  if (/video|script|hook|reel|tiktok|shorts|youtube|content/.test(p)) return STATES_VIDEO;
-  if (/research|find|search|what is|how to|explain|tell me|why/.test(p)) return STATES_RESEARCH;
-  return STATES_DEFAULT;
+const IMAGE_INTENT = /\b(generate|create|make|draw|paint|design|render|produce)\b.*\b(image|picture|photo|art|illustration|logo|poster|wallpaper|portrait|scene)\b|^(image|picture|photo|art) of\b/i;
+
+function isImageRequest(prompt: string) {
+  return IMAGE_INTENT.test(prompt);
 }
 
-/* Placeholder AI reply — to be replaced by edge function call */
-function buildAIContent(prompt: string): string {
-  return `I received your message:\n\n> ${prompt}\n\nThis is a placeholder reply. Wire up an AI edge function to generate real responses.`;
+function getWorkingStates(prompt: string, isImage: boolean): string[] {
+  if (isImage) return STATES_IMAGE;
+  const p = prompt.toLowerCase();
+  if (/research|find|search|what is|how to|explain|tell me|why/.test(p)) return STATES_RESEARCH;
+  return STATES_DEFAULT;
 }
 
 const ChatPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const {
     conversations,
     activeConvId,
@@ -56,8 +53,8 @@ const ChatPage = () => {
   const [workingState, setWorkingState] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const streamRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stateRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef  = useRef<AbortController | null>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConvId) ?? null;
   const activeMessages = activeConvId ? (messagesByConv[activeConvId] || []) : [];
@@ -69,27 +66,25 @@ const ChatPage = () => {
   }, []);
 
   const clearTimers = useCallback(() => {
-    if (streamRef.current) { clearInterval(streamRef.current); streamRef.current = null; }
-    if (stateRef.current)  { clearInterval(stateRef.current);  stateRef.current  = null; }
+    if (stateRef.current) { clearInterval(stateRef.current); stateRef.current = null; }
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
   }, []);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  // Load messages when active conversation changes
   useEffect(() => {
     if (activeConvId && !messagesByConv[activeConvId]) {
       loadMessages(activeConvId);
     }
   }, [activeConvId, messagesByConv, loadMessages]);
 
-  // Pending prompt after login
   useEffect(() => {
     if (!user) return;
     const pending = sessionStorage.getItem("pending_prompt");
     if (pending) {
       sessionStorage.removeItem("pending_prompt");
       sessionStorage.removeItem("pending_type");
-      handleSendMessage(pending);
+      handleSendMessage(pending, "fast");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -101,75 +96,148 @@ const ChatPage = () => {
     return raw.length > 12 ? raw.slice(0, 12) + "…" : raw;
   })();
 
-  const startAIReply = async (convId: string, prompt: string, isEdit: boolean) => {
-    clearTimers();
-    setIsLoading(true);
-
-    const states = getWorkingStates(prompt, isEdit);
+  const cycleStates = (states: string[]) => {
     setWorkingState(states[0]);
-
-    // Create assistant DB row immediately so streaming has a stable id
-    const created = await addMessage(convId, "assistant", "");
-    if (!created) {
-      setIsLoading(false);
-      setWorkingState(null);
-      return;
-    }
-    const aiMsgId = created.id;
-
-    // Cycle through states
-    let stateIdx = 1;
-    setWorkingState(states[1] ?? states[0]);
+    let idx = 0;
     stateRef.current = setInterval(() => {
-      if (stateIdx < states.length - 1) {
-        stateIdx++;
-        setWorkingState(states[stateIdx]);
+      if (idx < states.length - 1) {
+        idx++;
+        setWorkingState(states[idx]);
       }
     }, 1800);
-
-    // Stream content line by line
-    const lines = buildAIContent(prompt).split("\n");
-    let linePos = 0;
-
-    streamRef.current = setInterval(() => {
-      if (linePos >= lines.length) {
-        clearTimers();
-        setWorkingState(null);
-        setIsLoading(false);
-        // Persist final content
-        const finalContent = lines.join("\n");
-        updateMessage(aiMsgId, finalContent);
-        scrollToBottom();
-        return;
-      }
-      linePos++;
-      const partial = lines.slice(0, linePos).join("\n");
-      patchLocalMessage(convId, aiMsgId, partial);
-      scrollToBottom();
-    }, 110);
   };
 
-  const handleSendMessage = async (content: string) => {
+  /* ── IMAGE FLOW ────────────────────────────────── */
+  const handleImageGen = async (convId: string, prompt: string) => {
+    cycleStates(STATES_IMAGE);
+    setIsLoading(true);
+
+    const created = await addMessage(convId, "assistant", "Generating image…");
+    if (!created) { setIsLoading(false); setWorkingState(null); return; }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-image", {
+        body: { prompt, conversationId: convId },
+      });
+      if (error || !data?.url) throw new Error(error?.message || "Image generation failed");
+
+      const md = `![${prompt}](${data.url})`;
+      patchLocalMessage(convId, created.id, md);
+      await updateMessage(created.id, md);
+    } catch (e: any) {
+      console.error(e);
+      const errMsg = `❌ Image generation failed: ${e.message || "unknown error"}`;
+      patchLocalMessage(convId, created.id, errMsg);
+      await updateMessage(created.id, errMsg);
+      toast({ title: "Image failed", description: e.message, variant: "destructive" });
+    } finally {
+      clearTimers();
+      setWorkingState(null);
+      setIsLoading(false);
+      scrollToBottom();
+    }
+  };
+
+  /* ── TEXT STREAMING FLOW ──────────────────────── */
+  const handleTextStream = async (convId: string, prompt: string, tier: ModelTier) => {
+    cycleStates(getWorkingStates(prompt, false));
+    setIsLoading(true);
+
+    const created = await addMessage(convId, "assistant", "");
+    if (!created) { setIsLoading(false); setWorkingState(null); return; }
+    const aiMsgId = created.id;
+
+    // Build conversation history for the model
+    const history = [...activeMessages, { role: "user", content: prompt } as any]
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ messages: history, tier }),
+        signal: controller.signal,
+      });
+
+      if (resp.status === 429) throw new Error("Rate limit exceeded — try again shortly.");
+      if (resp.status === 402) throw new Error("AI credits exhausted.");
+      if (!resp.ok || !resp.body) throw new Error(`AI error (${resp.status})`);
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let acc = "";
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buffer.indexOf("\n")) !== -1) {
+          let line = buffer.slice(0, nl);
+          buffer = buffer.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") { streamDone = true; break; }
+          try {
+            const parsed = JSON.parse(json);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              acc += content;
+              patchLocalMessage(convId, aiMsgId, acc);
+              scrollToBottom();
+            }
+          } catch {
+            buffer = line + "\n" + buffer;
+            break;
+          }
+        }
+      }
+
+      if (acc) await updateMessage(aiMsgId, acc);
+    } catch (e: any) {
+      if (e.name !== "AbortError") {
+        console.error(e);
+        const errMsg = `❌ ${e.message || "Something went wrong"}`;
+        patchLocalMessage(convId, aiMsgId, errMsg);
+        await updateMessage(aiMsgId, errMsg);
+        toast({ title: "Chat error", description: e.message, variant: "destructive" });
+      }
+    } finally {
+      clearTimers();
+      setWorkingState(null);
+      setIsLoading(false);
+      scrollToBottom();
+    }
+  };
+
+  const handleSendMessage = async (content: string, tier: ModelTier = "fast") => {
     if (!user) {
       sessionStorage.setItem("pending_prompt", content);
       navigate("/login");
       return;
     }
 
-    const isEdit = !!activeConvId;
     let convId = activeConvId;
-
     if (!convId) {
       const newConv = await createConversation(content);
       if (!newConv) return;
       convId = newConv.id;
       setActiveConvId(convId);
     } else if (activeMessages.length === 0) {
-      // first message in an existing empty convo → set title
       updateConversationTitle(convId, content);
     }
 
-    // Optimistically render the user message immediately
     const tempUserMsg: ChatMessage = {
       id: generateLocalId(),
       role: "user",
@@ -178,12 +246,13 @@ const ChatPage = () => {
     };
     appendLocalMessage(convId, tempUserMsg);
     scrollToBottom();
-
-    // Persist user message (DB row will replace optimistic one in messagesByConv via addMessage)
     await addMessage(convId, "user", content);
 
-    // Trigger AI reply
-    startAIReply(convId, content, isEdit);
+    if (isImageRequest(content)) {
+      await handleImageGen(convId, content);
+    } else {
+      await handleTextStream(convId, content, tier);
+    }
   };
 
   const handleNewChat = () => {
@@ -239,7 +308,7 @@ const ChatPage = () => {
         </div>
 
         {!activeConversation || activeMessages.length === 0 ? (
-          <WelcomeScreen onSuggestionClick={handleSendMessage} />
+          <WelcomeScreen onSuggestionClick={(s) => handleSendMessage(s, "fast")} />
         ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-3xl py-4 pb-2">
