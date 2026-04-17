@@ -131,7 +131,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
             placeholder={attachedImageUrl ? "Ask about the image, or describe an edit…" : "Message Elite Veo…"}
             data-testid="input-chat"
             rows={1}
-            className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-6 min-h-[24px] max-h-[200px] pr-10"
+            className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none leading-6 min-h-[24px] max-h-[200px]"
           />
 
           <div className="flex items-center justify-between mt-2 gap-2">
