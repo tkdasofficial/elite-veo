@@ -83,6 +83,24 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
                   {children}
                 </blockquote>
               ),
+              a: ({ children, href }) => (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline underline-offset-2 hover:text-primary/80 break-words"
+                >
+                  {children}
+                </a>
+              ),
+              img: ({ src, alt }) => (
+                <img
+                  src={src as string}
+                  alt={alt || ""}
+                  loading="lazy"
+                  className="my-3 rounded-xl border border-border/40 max-w-full h-auto"
+                />
+              ),
               code: ({ children, className }) => {
                 const isBlock = className?.includes("language-");
                 const lang = className?.replace("language-", "") || "code";

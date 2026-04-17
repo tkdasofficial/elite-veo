@@ -3,32 +3,16 @@ import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatMessageComponent from "@/components/chat/ChatMessage";
-import ChatInput, { ModelTier } from "@/components/chat/ChatInput";
+import ChatInput, { ModelTier, SendPayload } from "@/components/chat/ChatInput";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { ChatMessage } from "@/types/chat";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { detectIntent, statesFor, Intent } from "@/lib/intent-router";
 
 const generateLocalId = () => "local-" + Math.random().toString(36).slice(2, 10);
-
-const STATES_IMAGE    = ["Thinking...", "Designing...", "Generating...", "Rendering..."];
-const STATES_RESEARCH = ["Thinking...", "Searching...", "Researching...", "Analyzing..."];
-const STATES_DEFAULT  = ["Thinking...", "Analyzing...", "Working..."];
-
-const IMAGE_INTENT = /\b(generate|create|make|draw|paint|design|render|produce)\b.*\b(image|picture|photo|art|illustration|logo|poster|wallpaper|portrait|scene)\b|^(image|picture|photo|art) of\b/i;
-
-function isImageRequest(prompt: string) {
-  return IMAGE_INTENT.test(prompt);
-}
-
-function getWorkingStates(prompt: string, isImage: boolean): string[] {
-  if (isImage) return STATES_IMAGE;
-  const p = prompt.toLowerCase();
-  if (/research|find|search|what is|how to|explain|tell me|why/.test(p)) return STATES_RESEARCH;
-  return STATES_DEFAULT;
-}
 
 const ChatPage = () => {
   const navigate = useNavigate();
@@ -78,13 +62,14 @@ const ChatPage = () => {
     }
   }, [activeConvId, messagesByConv, loadMessages]);
 
+  // Pending prompt after login
   useEffect(() => {
     if (!user) return;
     const pending = sessionStorage.getItem("pending_prompt");
     if (pending) {
       sessionStorage.removeItem("pending_prompt");
       sessionStorage.removeItem("pending_type");
-      handleSendMessage(pending, "fast");
+      handleSendMessage({ text: pending, tier: "fast" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -93,10 +78,10 @@ const ChatPage = () => {
     const raw = workingState && !activeConversation?.title
       ? workingState
       : activeConversation?.title ?? "Elite Veo";
-    return raw.length > 12 ? raw.slice(0, 12) + "…" : raw;
+    return raw.length > 14 ? raw.slice(0, 14) + "…" : raw;
   })();
 
-  const cycleStates = (states: string[]) => {
+  const startStates = (states: string[]) => {
     setWorkingState(states[0]);
     let idx = 0;
     stateRef.current = setInterval(() => {
@@ -104,124 +89,119 @@ const ChatPage = () => {
         idx++;
         setWorkingState(states[idx]);
       }
-    }, 1800);
+    }, 1500);
   };
 
-  /* ── IMAGE FLOW ────────────────────────────────── */
-  const handleImageGen = async (convId: string, prompt: string) => {
-    cycleStates(STATES_IMAGE);
-    setIsLoading(true);
-
-    const created = await addMessage(convId, "assistant", "Generating image…");
-    if (!created) { setIsLoading(false); setWorkingState(null); return; }
-
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-image", {
-        body: { prompt, conversationId: convId },
-      });
-      if (error || !data?.url) throw new Error(error?.message || "Image generation failed");
-
-      const md = `![${prompt}](${data.url})`;
-      patchLocalMessage(convId, created.id, md);
-      await updateMessage(created.id, md);
-    } catch (e: any) {
-      console.error(e);
-      const errMsg = `❌ Image generation failed: ${e.message || "unknown error"}`;
-      patchLocalMessage(convId, created.id, errMsg);
-      await updateMessage(created.id, errMsg);
-      toast({ title: "Image failed", description: e.message, variant: "destructive" });
-    } finally {
-      clearTimers();
-      setWorkingState(null);
-      setIsLoading(false);
-      scrollToBottom();
+  /* ── SSE streaming helper for any function returning text/event-stream ── */
+  const streamSSE = async (
+    funcName: string,
+    body: any,
+    convId: string,
+    aiMsgId: string,
+    requireAuth: boolean
+  ) => {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${funcName}`;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    };
+    if (requireAuth) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      headers.Authorization = `Bearer ${session.access_token}`;
     }
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body), signal: controller.signal });
+
+    if (resp.status === 429) throw new Error("Rate limit exceeded — try again shortly.");
+    if (resp.status === 402) throw new Error("AI credits exhausted.");
+    if (!resp.ok || !resp.body) {
+      let detail = "";
+      try { detail = (await resp.json())?.error || ""; } catch {}
+      throw new Error(detail || `Error (${resp.status})`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let acc = "";
+    let done = false;
+    while (!done) {
+      const r = await reader.read();
+      if (r.done) break;
+      buffer += decoder.decode(r.value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) !== -1) {
+        let line = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        if (!line.startsWith("data: ")) continue;
+        const json = line.slice(6).trim();
+        if (json === "[DONE]") { done = true; break; }
+        try {
+          const parsed = JSON.parse(json);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            acc += content;
+            patchLocalMessage(convId, aiMsgId, acc);
+            scrollToBottom();
+          }
+        } catch {
+          buffer = line + "\n" + buffer;
+          break;
+        }
+      }
+    }
+    return acc;
   };
 
-  /* ── TEXT STREAMING FLOW ──────────────────────── */
-  const handleTextStream = async (convId: string, prompt: string, tier: ModelTier) => {
-    cycleStates(getWorkingStates(prompt, false));
-    setIsLoading(true);
+  /* ── Each intent's flow ── */
 
-    const created = await addMessage(convId, "assistant", "");
-    if (!created) { setIsLoading(false); setWorkingState(null); return; }
-    const aiMsgId = created.id;
-
-    // Build conversation history for the model
+  const flowChat = async (convId: string, prompt: string, tier: ModelTier, msgId: string) => {
     const history = [...activeMessages, { role: "user", content: prompt } as any]
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: m.content }));
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({ messages: history, tier }),
-        signal: controller.signal,
-      });
-
-      if (resp.status === 429) throw new Error("Rate limit exceeded — try again shortly.");
-      if (resp.status === 402) throw new Error("AI credits exhausted.");
-      if (!resp.ok || !resp.body) throw new Error(`AI error (${resp.status})`);
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let acc = "";
-      let streamDone = false;
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, nl);
-          buffer = buffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") { streamDone = true; break; }
-          try {
-            const parsed = JSON.parse(json);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) {
-              acc += content;
-              patchLocalMessage(convId, aiMsgId, acc);
-              scrollToBottom();
-            }
-          } catch {
-            buffer = line + "\n" + buffer;
-            break;
-          }
-        }
-      }
-
-      if (acc) await updateMessage(aiMsgId, acc);
-    } catch (e: any) {
-      if (e.name !== "AbortError") {
-        console.error(e);
-        const errMsg = `❌ ${e.message || "Something went wrong"}`;
-        patchLocalMessage(convId, aiMsgId, errMsg);
-        await updateMessage(aiMsgId, errMsg);
-        toast({ title: "Chat error", description: e.message, variant: "destructive" });
-      }
-    } finally {
-      clearTimers();
-      setWorkingState(null);
-      setIsLoading(false);
-      scrollToBottom();
-    }
+    const acc = await streamSSE("chat", { messages: history, tier }, convId, msgId, false);
+    if (acc) await updateMessage(msgId, acc);
   };
 
-  const handleSendMessage = async (content: string, tier: ModelTier = "fast") => {
+  const flowSearch = async (convId: string, prompt: string, msgId: string) => {
+    const acc = await streamSSE("web-search", { prompt }, convId, msgId, false);
+    if (acc) await updateMessage(msgId, acc);
+  };
+
+  const flowImage = async (convId: string, prompt: string, msgId: string) => {
+    const { data, error } = await supabase.functions.invoke("generate-image", {
+      body: { prompt, conversationId: convId },
+    });
+    if (error || !data?.url) throw new Error(error?.message || "Image generation failed");
+    const md = `![${prompt}](${data.url})`;
+    patchLocalMessage(convId, msgId, md);
+    await updateMessage(msgId, md);
+  };
+
+  const flowEditImage = async (convId: string, prompt: string, imageUrl: string, msgId: string) => {
+    const { data, error } = await supabase.functions.invoke("edit-image", {
+      body: { prompt, imageUrl, conversationId: convId },
+    });
+    if (error || !data?.url) throw new Error(error?.message || "Image edit failed");
+    const md = `![${prompt}](${data.url})`;
+    patchLocalMessage(convId, msgId, md);
+    await updateMessage(msgId, md);
+  };
+
+  const flowAnalyze = async (convId: string, prompt: string, imageUrl: string, msgId: string) => {
+    const { data, error } = await supabase.functions.invoke("analyze", {
+      body: { prompt, imageUrl },
+    });
+    if (error || !data?.result) throw new Error(error?.message || "Analysis failed");
+    patchLocalMessage(convId, msgId, data.result);
+    await updateMessage(msgId, data.result);
+  };
+
+  const handleSendMessage = async (payload: SendPayload) => {
+    const { text: content, tier = "fast", attachedImageUrl } = payload;
     if (!user) {
       sessionStorage.setItem("pending_prompt", content);
       navigate("/login");
@@ -238,20 +218,46 @@ const ChatPage = () => {
       updateConversationTitle(convId, content);
     }
 
+    // Optimistic user message — render attached image inline if any
+    const userBody = attachedImageUrl ? `${content}\n\n![attached](${attachedImageUrl})` : content;
     const tempUserMsg: ChatMessage = {
-      id: generateLocalId(),
-      role: "user",
-      content,
-      timestamp: new Date(),
+      id: generateLocalId(), role: "user", content: userBody, timestamp: new Date(),
     };
     appendLocalMessage(convId, tempUserMsg);
     scrollToBottom();
-    await addMessage(convId, "user", content);
+    await addMessage(convId, "user", userBody);
 
-    if (isImageRequest(content)) {
-      await handleImageGen(convId, content);
-    } else {
-      await handleTextStream(convId, content, tier);
+    // Detect intent + start states
+    const intent: Intent = detectIntent(content, !!attachedImageUrl);
+    const states = statesFor(intent, content);
+    startStates(states);
+    setIsLoading(true);
+
+    const created = await addMessage(convId, "assistant", "");
+    if (!created) { clearTimers(); setIsLoading(false); setWorkingState(null); return; }
+    const aiMsgId = created.id;
+
+    try {
+      if (intent === "image")            await flowImage(convId, content, aiMsgId);
+      else if (intent === "edit-image" && attachedImageUrl)
+                                          await flowEditImage(convId, content, attachedImageUrl, aiMsgId);
+      else if (intent === "analyze" && attachedImageUrl)
+                                          await flowAnalyze(convId, content, attachedImageUrl, aiMsgId);
+      else if (intent === "search")      await flowSearch(convId, content, aiMsgId);
+      else                                await flowChat(convId, content, tier, aiMsgId);
+    } catch (e: any) {
+      if (e.name !== "AbortError") {
+        console.error(e);
+        const errMsg = `❌ ${e.message || "Something went wrong"}`;
+        patchLocalMessage(convId, aiMsgId, errMsg);
+        await updateMessage(aiMsgId, errMsg);
+        toast({ title: "Error", description: e.message, variant: "destructive" });
+      }
+    } finally {
+      clearTimers();
+      setWorkingState(null);
+      setIsLoading(false);
+      scrollToBottom();
     }
   };
 
@@ -308,7 +314,7 @@ const ChatPage = () => {
         </div>
 
         {!activeConversation || activeMessages.length === 0 ? (
-          <WelcomeScreen onSuggestionClick={(s) => handleSendMessage(s, "fast")} />
+          <WelcomeScreen onSuggestionClick={(s) => handleSendMessage({ text: s, tier: "fast" })} />
         ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-3xl py-4 pb-2">
