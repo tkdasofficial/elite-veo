@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, MailCheck } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/context/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
+import OtpInput from "@/components/auth/OtpInput";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, verifySignupOtp, resendSignupOtp } = useAuth();
 
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
@@ -17,9 +18,23 @@ const Signup = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [sentEmail, setSentEmail] = useState<string | null>(null);
+
+  const [otpStage, setOtpStage] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [resendSeconds, setResendSeconds] = useState(0);
 
   const pendingPrompt = sessionStorage.getItem("pending_prompt");
+
+  const startResendCooldown = () => {
+    setResendSeconds(45);
+    const t = setInterval(() => {
+      setResendSeconds((s) => {
+        if (s <= 1) { clearInterval(t); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+  };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +64,31 @@ const Signup = () => {
       return;
     }
     if (needsConfirmation) {
-      setSentEmail(email.trim());
+      setOtpStage(true);
+      startResendCooldown();
     } else {
       navigate("/");
     }
+  };
+
+  const handleVerifyOtp = async (code: string) => {
+    setOtpError("");
+    setOtpVerifying(true);
+    const { error } = await verifySignupOtp(email, code);
+    setOtpVerifying(false);
+    if (error) {
+      setOtpError(/expired|invalid/i.test(error) ? "Invalid or expired code. Try again." : error);
+      return;
+    }
+    navigate("/");
+  };
+
+  const handleResend = async () => {
+    if (resendSeconds > 0) return;
+    setOtpError("");
+    const { error } = await resendSignupOtp(email);
+    if (error) { setOtpError(error); return; }
+    startResendCooldown();
   };
 
   const handleGoogle = async () => {
@@ -65,28 +101,44 @@ const Signup = () => {
     }
   };
 
-  if (sentEmail) {
+  if (otpStage) {
     return (
-      <AuthLayout backLabel="Back to sign in" onBack={() => navigate("/login")}>
+      <AuthLayout backLabel="Back" onBack={() => setOtpStage(false)}>
         <div className="flex flex-col items-center text-center gap-5">
           <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md">
             <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <MailCheck className="h-8 w-8 text-primary" />
+            <ShieldCheck className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <p className="text-xl font-bold text-foreground mb-1">Check your inbox</p>
+            <p className="text-xl font-bold text-foreground mb-1">Verify your email</p>
             <p className="text-sm text-muted-foreground">
-              We sent a confirmation link to <span className="font-semibold text-foreground">{sentEmail}</span>.
-              Click the link to activate your account.
+              Enter the 6-digit code we sent to{" "}
+              <span className="font-semibold text-foreground break-all">{email}</span>
             </p>
           </div>
+
+          <div className="w-full">
+            <OtpInput
+              length={6}
+              onComplete={handleVerifyOtp}
+              disabled={otpVerifying}
+              error={!!otpError}
+            />
+            {otpError && <p className="text-xs text-destructive mt-3">{otpError}</p>}
+            {otpVerifying && <p className="text-xs text-muted-foreground mt-3">Verifying…</p>}
+          </div>
+
           <button
-            onClick={() => navigate("/login")}
-            className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            type="button"
+            onClick={handleResend}
+            disabled={resendSeconds > 0}
+            className="text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
           >
-            Back to Sign In
+            {resendSeconds > 0
+              ? `Resend code in ${resendSeconds}s`
+              : "Didn't get it? Resend code"}
           </button>
         </div>
       </AuthLayout>
@@ -196,7 +248,7 @@ const Signup = () => {
           disabled={loading || googleLoading}
           className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors mt-1"
         >
-          {loading ? "Creating account…" : "Create Account"}
+          {loading ? "Sending code…" : "Create Account"}
         </button>
       </form>
 
