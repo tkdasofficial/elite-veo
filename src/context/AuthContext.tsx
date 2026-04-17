@@ -19,10 +19,13 @@ interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  verifySignupOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  resendSignupOtp: (email: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  verifyRecoveryOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
 }
 
