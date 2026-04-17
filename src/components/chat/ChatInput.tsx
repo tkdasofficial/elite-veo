@@ -136,48 +136,59 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
           <div className="flex items-center justify-between mt-2 gap-2">
             <div className="flex items-center gap-1">
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
-              <button
-                type="button"
-                data-testid="button-attach"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
-              >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-              </button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              {user && (
+                <>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                   <button
                     type="button"
-                    data-testid="button-model"
-                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    data-testid="button-attach"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
                   >
-                    <ActiveIcon className="h-3.5 w-3.5" />
-                    <span>{activeModel.label}</span>
-                    <ChevronDown className="h-3 w-3 opacity-60" />
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                   </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-44">
-                  {MODELS.map((m) => {
-                    const Icon = m.icon;
-                    return (
-                      <DropdownMenuItem
-                        key={m.id}
-                        onClick={() => setTier(m.id)}
-                        className="gap-2 cursor-pointer"
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        data-testid="button-model"
+                        className="flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                       >
-                        <Icon className="h-4 w-4 text-primary" />
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium">{m.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{m.desc}</span>
-                        </div>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        <ActiveIcon className="h-3.5 w-3.5" />
+                        <span>{activeModel.label}</span>
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-44">
+                      {MODELS.map((m) => {
+                        const Icon = m.icon;
+                        return (
+                          <DropdownMenuItem
+                            key={m.id}
+                            onClick={() => setTier(m.id)}
+                            className="gap-2 cursor-pointer"
+                          >
+                            <Icon className="h-4 w-4 text-primary" />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium">{m.label}</span>
+                              <span className="text-[10px] text-muted-foreground">{m.desc}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+
+              {!user && (
+                <span className="flex items-center gap-1.5 h-8 px-2.5 rounded-full text-[11px] font-medium text-muted-foreground/70 bg-secondary/50">
+                  <Zap className="h-3 w-3" />
+                  Guest mode · text only
+                </span>
+              )}
             </div>
 
             <button
