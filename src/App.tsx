@@ -9,6 +9,7 @@ import ChatPage from "./pages/ChatPage";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Settings from "./pages/Settings";
 import MyCreations from "./pages/MyCreations";
 import Terms from "./pages/Terms";
@@ -19,8 +20,9 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <AppProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -30,6 +32,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/my-creations" element={<MyCreations />} />
               <Route path="/terms" element={<Terms />} />
