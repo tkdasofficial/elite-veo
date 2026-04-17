@@ -5,9 +5,10 @@ import { ChatMessage as ChatMessageType } from "@/types/chat";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  workingState?: string | null;
 }
 
-const ChatMessageComponent = ({ message }: ChatMessageProps) => {
+const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === "user";
 
@@ -29,6 +30,30 @@ const ChatMessageComponent = ({ message }: ChatMessageProps) => {
       </div>
     );
   }
+
+  /* ── AI bubble empty + working → show inline indicator at the reply position ── */
+  const isEmpty = !message.content || message.content.trim() === "";
+  if (isEmpty && workingState) {
+    return (
+      <div className="px-4 py-3">
+        <div className="inline-flex items-center gap-2 rounded-full bg-secondary/40 border border-border/30 px-3 py-1.5 animate-fade-in">
+          <span className="flex gap-0.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce"
+                style={{ animationDelay: `${i * 130}ms` }}
+              />
+            ))}
+          </span>
+          <span className="text-[12px] font-medium text-primary/85 tracking-wide">
+            {workingState}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  if (isEmpty) return null;
 
   /* ── AI response — left aligned, pure text ── */
   return (
