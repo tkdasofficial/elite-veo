@@ -1,29 +1,23 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, MailCheck } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/context/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
-import OtpInput from "@/components/auth/OtpInput";
-
-type Step = "form" | "otp";
-
-const generateOtp = () =>
-  Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).join("");
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
 
-  const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpError, setOtpError] = useState(false);
-  const [resending, setResending] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [sentEmail, setSentEmail] = useState<string | null>(null);
 
   const pendingPrompt = sessionStorage.getItem("pending_prompt");
 
@@ -31,7 +25,7 @@ const Signup = () => {
     e.preventDefault();
     setError("");
     if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
+      setError("Please fill in all required fields.");
       return;
     }
     if (password.length < 6) {
@@ -39,71 +33,60 @@ const Signup = () => {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    setOtpCode(generateOtp());
+    const { error, needsConfirmation } = await signUp({
+      name,
+      username: username.trim() || undefined,
+      email,
+      password,
+    });
     setLoading(false);
-    setStep("otp");
+    if (error) {
+      setError(
+        /already registered|already exists/i.test(error)
+          ? "An account with this email already exists. Try signing in."
+          : error
+      );
+      return;
+    }
+    if (needsConfirmation) {
+      setSentEmail(email.trim());
+    } else {
+      navigate("/");
+    }
   };
 
-  const handleResend = async () => {
-    setResending(true);
-    setOtpError(false);
-    await new Promise((r) => setTimeout(r, 700));
-    setOtpCode(generateOtp());
-    setResending(false);
+  const handleGoogle = async () => {
+    setError("");
+    setGoogleLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      setError(error);
+      setGoogleLoading(false);
+    }
   };
 
-  const handleOtpComplete = async (value: string) => {
-    if (value.length < 8) return;
-    if (value !== otpCode) { setOtpError(true); return; }
-    setOtpError(false);
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 500));
-    signup(name, email, password);
-    navigate("/");
-  };
-
-  if (step === "otp") {
+  if (sentEmail) {
     return (
-      <AuthLayout backLabel="Back" onBack={() => { setStep("form"); setOtpError(false); }}>
-        <div className="flex flex-col items-center mb-7">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md mb-4">
+      <AuthLayout backLabel="Back to sign in" onBack={() => navigate("/login")}>
+        <div className="flex flex-col items-center text-center gap-5">
+          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md">
             <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
           </div>
-          <h1 className="text-xl font-bold text-foreground">Verify your email</h1>
-          <p className="text-sm text-muted-foreground mt-1">We sent an 8-digit code to</p>
-          <p className="text-sm font-semibold text-foreground mt-0.5 truncate max-w-full">{email}</p>
-        </div>
-
-        <div className="rounded-2xl border border-primary/25 bg-primary/8 px-4 py-3 mb-6 text-center">
-          <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-widest mb-1.5">Test code</p>
-          <p className="text-xl font-bold tracking-[0.3em] text-primary">{otpCode}</p>
-        </div>
-
-        <OtpInput
-          key={otpCode}
-          onComplete={handleOtpComplete}
-          onChange={(v) => { if (otpError && v.length < 8) setOtpError(false); }}
-          disabled={loading}
-          error={otpError}
-        />
-
-        {otpError && (
-          <p className="text-xs text-destructive text-center mt-3">Incorrect code. Please try again.</p>
-        )}
-        {loading && (
-          <p className="text-xs text-muted-foreground text-center mt-3">Creating your account…</p>
-        )}
-
-        <div className="flex items-center justify-center gap-1.5 mt-6">
-          <span className="text-sm text-muted-foreground">Didn't receive it?</span>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <MailCheck className="h-8 w-8 text-primary" />
+          </div>
+          <div>
+            <p className="text-xl font-bold text-foreground mb-1">Check your inbox</p>
+            <p className="text-sm text-muted-foreground">
+              We sent a confirmation link to <span className="font-semibold text-foreground">{sentEmail}</span>.
+              Click the link to activate your account.
+            </p>
+          </div>
           <button
-            onClick={handleResend}
-            disabled={resending}
-            className="flex items-center gap-1 text-sm font-medium text-primary hover:underline disabled:opacity-50"
+            onClick={() => navigate("/login")}
+            className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
-            {resending && <RefreshCw className="h-3 w-3 animate-spin" />}
-            {resending ? "Resending…" : "Resend code"}
+            Back to Sign In
           </button>
         </div>
       </AuthLayout>
@@ -118,7 +101,7 @@ const Signup = () => {
         </div>
         <h1 className="text-xl font-bold text-foreground">Create your account</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {pendingPrompt ? "Sign up to create your video" : "Start creating videos with AI"}
+          {pendingPrompt ? "Sign up to create your video" : "Start creating with AI"}
         </p>
       </div>
 
@@ -129,9 +112,25 @@ const Signup = () => {
         </div>
       )}
 
+      <button
+        type="button"
+        onClick={handleGoogle}
+        disabled={googleLoading || loading}
+        className="w-full h-11 rounded-2xl border border-border bg-secondary/30 flex items-center justify-center gap-2.5 text-sm font-semibold text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors mb-4"
+      >
+        <FcGoogle className="h-5 w-5" />
+        {googleLoading ? "Redirecting…" : "Continue with Google"}
+      </button>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 border-t border-border/40" />
+        <span className="text-[11px] text-muted-foreground">or sign up with email</span>
+        <div className="flex-1 border-t border-border/40" />
+      </div>
+
       <form onSubmit={handleFormSubmit} className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Full name</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Display name</label>
           <input
             type="text"
             data-testid="input-name"
@@ -139,6 +138,19 @@ const Signup = () => {
             onChange={(e) => setName(e.target.value)}
             placeholder="Alex Johnson"
             autoComplete="name"
+            className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+            Username <span className="text-muted-foreground/50">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())}
+            placeholder="alexj"
+            autoComplete="username"
             className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
           />
         </div>
@@ -181,20 +193,14 @@ const Signup = () => {
         <button
           type="submit"
           data-testid="button-signup"
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors mt-1"
         >
-          {loading ? "Sending code…" : "Continue"}
+          {loading ? "Creating account…" : "Create Account"}
         </button>
       </form>
 
-      <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 border-t border-border/40" />
-        <span className="text-[11px] text-muted-foreground">or</span>
-        <div className="flex-1 border-t border-border/40" />
-      </div>
-
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground mt-5">
         Already have an account?{" "}
         <Link to="/login" className="font-medium text-primary hover:underline">Sign In</Link>
       </p>

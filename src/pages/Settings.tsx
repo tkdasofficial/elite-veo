@@ -37,14 +37,14 @@ const SettingsRow = ({
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   const initials = user?.name
     ? user.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await signOut();
     navigate("/");
   };
 

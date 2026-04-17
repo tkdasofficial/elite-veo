@@ -45,7 +45,7 @@ const ChatSidebar = ({
   isOpen,
   onClose,
 }: ChatSidebarProps) => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -62,10 +62,10 @@ const ChatSidebar = ({
     navigate(path);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setShowUserMenu(false);
     onClose();
-    logout();
+    await signOut();
     navigate("/");
   };
 
