@@ -202,14 +202,63 @@ const ChatPage = () => {
 
   const handleSendMessage = async (payload: SendPayload) => {
     const { text: content, tier = "fast", attachedImageUrl } = payload;
-    if (!user) {
+
+    // Detect intent first — guests are limited to plain text chat
+    const intent: Intent = detectIntent(content, !!attachedImageUrl);
+
+    if (!user && intent !== "chat") {
       sessionStorage.setItem("pending_prompt", content);
+      toast({
+        title: "Sign in required",
+        description: "Image, search and file features require an account.",
+      });
       navigate("/login");
       return;
     }
 
+    /* ─────────── GUEST MODE: in-memory text chat only ─────────── */
+    if (!user) {
+      const guestConvId = activeConvId ?? "guest";
+      if (!activeConvId) setActiveConvId(guestConvId);
+
+      const userMsg: ChatMessage = {
+        id: generateLocalId(), role: "user", content, timestamp: new Date(),
+      };
+      appendLocalMessage(guestConvId, userMsg);
+      scrollToBottom();
+
+      const aiMsgId = generateLocalId();
+      const aiMsg: ChatMessage = {
+        id: aiMsgId, role: "assistant", content: "", timestamp: new Date(),
+      };
+      appendLocalMessage(guestConvId, aiMsg);
+
+      const states = statesFor("chat", content);
+      startStates(states);
+      setIsLoading(true);
+
+      try {
+        const history = [...activeMessages, userMsg]
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .map((m) => ({ role: m.role, content: m.content }));
+        await streamSSE("chat", { messages: history, tier: "fast" }, guestConvId, aiMsgId, false);
+      } catch (e: any) {
+        if (e.name !== "AbortError") {
+          patchLocalMessage(guestConvId, aiMsgId, `❌ ${e.message || "Something went wrong"}`);
+          toast({ title: "Error", description: e.message, variant: "destructive" });
+        }
+      } finally {
+        clearTimers();
+        setWorkingState(null);
+        setIsLoading(false);
+        scrollToBottom();
+      }
+      return;
+    }
+
+    /* ─────────── AUTHENTICATED MODE ─────────── */
     let convId = activeConvId;
-    if (!convId) {
+    if (!convId || convId === "guest") {
       const newConv = await createConversation(content);
       if (!newConv) return;
       convId = newConv.id;
@@ -227,8 +276,6 @@ const ChatPage = () => {
     scrollToBottom();
     await addMessage(convId, "user", userBody);
 
-    // Detect intent + start states
-    const intent: Intent = detectIntent(content, !!attachedImageUrl);
     const states = statesFor(intent, content);
     startStates(states);
     setIsLoading(true);
