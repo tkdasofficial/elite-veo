@@ -365,27 +365,18 @@ const ChatPage = () => {
         ) : (
           <div ref={scrollRef} className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-3xl py-4 pb-2">
-              {activeMessages.map((msg) => (
-                <ChatMessageComponent key={msg.id} message={msg} />
-              ))}
+              {activeMessages.map((msg, idx) => {
+                const isLast = idx === activeMessages.length - 1;
+                const showWorking = isLast && msg.role === "assistant" && isLoading ? workingState : null;
+                return (
+                  <ChatMessageComponent
+                    key={msg.id}
+                    message={msg}
+                    workingState={showWorking}
+                  />
+                );
+              })}
             </div>
-          </div>
-        )}
-
-        {workingState && (
-          <div className="shrink-0 flex items-center gap-2 px-5 py-2 border-t border-border/10 bg-background/80">
-            <span className="flex gap-0.5">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce"
-                  style={{ animationDelay: `${i * 130}ms` }}
-                />
-              ))}
-            </span>
-            <span className="text-[12px] font-medium text-primary/80 tracking-wide">
-              {workingState}
-            </span>
           </div>
         )}
 
