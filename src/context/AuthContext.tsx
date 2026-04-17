@@ -19,10 +19,13 @@ interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  verifySignupOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  resendSignupOtp: (email: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  verifyRecoveryOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
 }
 
@@ -67,12 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signUp: AuthContextType["signUp"] = async ({ name, username, email, password }) => {
-    const redirectUrl = `${window.location.origin}/`;
+    // No emailRedirectTo => Supabase sends OTP code instead of magic link
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: redirectUrl,
         data: {
           display_name: name.trim(),
           full_name: name.trim(),
@@ -81,8 +83,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       },
     });
     if (error) return { error: error.message, needsConfirmation: false };
-    // If session is null, email confirmation is required
     return { error: null, needsConfirmation: !data.session };
+  };
+
+  const verifySignupOtp: AuthContextType["verifySignupOtp"] = async (email, token) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: "signup",
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const resendSignupOtp: AuthContextType["resendSignupOtp"] = async (email) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+    });
+    return { error: error?.message ?? null };
   };
 
   const signIn: AuthContextType["signIn"] = async (email, password) => {
@@ -107,8 +125,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword: AuthContextType["resetPassword"] = async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+    // Omit redirectTo so Supabase emails an OTP code (not a magic link)
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+    return { error: error?.message ?? null };
+  };
+
+  const verifyRecoveryOtp: AuthContextType["verifyRecoveryOtp"] = async (email, token) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: token.trim(),
+      type: "recovery",
     });
     return { error: error?.message ?? null };
   };
@@ -125,10 +151,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         loading,
         signUp,
+        verifySignupOtp,
+        resendSignupOtp,
         signIn,
         signInWithGoogle,
         signOut,
         resetPassword,
+        verifyRecoveryOtp,
         updatePassword,
       }}
     >
