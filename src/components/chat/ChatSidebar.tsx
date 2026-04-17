@@ -115,14 +115,6 @@ const ChatSidebar = ({
           >
             <SquarePen className="h-4 w-4" />
           </button>
-
-          <button
-            onClick={onClose}
-            className="lg:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-            aria-label="Close sidebar"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* ── New chat CTA pill ── */}
