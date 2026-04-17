@@ -1,72 +1,137 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string | null;
 }
 
 interface AuthContextType {
   user: AuthUser | null;
-  login: (email: string, password: string) => boolean;
-  signup: (name: string, email: string, password: string) => boolean;
-  logout: () => void;
+  session: Session | null;
+  loading: boolean;
+  signUp: (params: {
+    name: string;
+    username?: string;
+    email: string;
+    password: string;
+  }) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = "elite_veo_user";
+const mapUser = (u: User | null): AuthUser | null => {
+  if (!u) return null;
+  const meta = u.user_metadata || {};
+  const name =
+    meta.display_name ||
+    meta.full_name ||
+    meta.name ||
+    (u.email ? u.email.split("@")[0] : "User");
+  return {
+    id: u.id,
+    name,
+    email: u.email ?? "",
+    avatar_url: meta.avatar_url ?? null,
+  };
+};
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const persist = (u: AuthUser | null) => {
-    if (u) localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-    else localStorage.removeItem(STORAGE_KEY);
-    setUser(u);
+  useEffect(() => {
+    // 1. Listener FIRST (must be synchronous)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+      setUser(mapUser(sess?.user ?? null));
+    });
+
+    // 2. Then existing session
+    supabase.auth.getSession().then(({ data: { session: sess } }) => {
+      setSession(sess);
+      setUser(mapUser(sess?.user ?? null));
+      setLoading(false);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const signUp: AuthContextType["signUp"] = async ({ name, username, email, password }) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: name.trim(),
+          full_name: name.trim(),
+          ...(username ? { username: username.trim() } : {}),
+        },
+      },
+    });
+    if (error) return { error: error.message, needsConfirmation: false };
+    // If session is null, email confirmation is required
+    return { error: null, needsConfirmation: !data.session };
   };
 
-  const signup = (name: string, email: string, _password: string): boolean => {
-    if (!name.trim() || !email.trim()) return false;
-    const newUser: AuthUser = {
-      id: Math.random().toString(36).slice(2),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-    };
-    persist(newUser);
-    return true;
+  const signIn: AuthContextType["signIn"] = async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    return { error: error?.message ?? null };
   };
 
-  const login = (email: string, _password: string): boolean => {
-    if (!email.trim()) return false;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const u: AuthUser = JSON.parse(stored);
-      if (u.email === email.trim().toLowerCase()) {
-        persist(u);
-        return true;
-      }
-    }
-    const fallback: AuthUser = {
-      id: Math.random().toString(36).slice(2),
-      name: email.split("@")[0],
-      email: email.trim().toLowerCase(),
-    };
-    persist(fallback);
-    return true;
+  const signInWithGoogle: AuthContextType["signInWithGoogle"] = async () => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: redirectUrl },
+    });
+    return { error: error?.message ?? null };
   };
 
-  const logout = () => persist(null);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const resetPassword: AuthContextType["resetPassword"] = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const updatePassword: AuthContextType["updatePassword"] = async (password) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error?.message ?? null };
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        resetPassword,
+        updatePassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
