@@ -267,14 +267,10 @@ const ChatPage = () => {
       updateConversationTitle(convId, content);
     }
 
-    // Optimistic user message — render attached image inline if any
+    // Persist user message (also appends to local state)
     const userBody = attachedImageUrl ? `${content}\n\n![attached](${attachedImageUrl})` : content;
-    const tempUserMsg: ChatMessage = {
-      id: generateLocalId(), role: "user", content: userBody, timestamp: new Date(),
-    };
-    appendLocalMessage(convId, tempUserMsg);
-    scrollToBottom();
     await addMessage(convId, "user", userBody);
+    scrollToBottom();
 
     const states = statesFor(intent, content);
     startStates(states);
