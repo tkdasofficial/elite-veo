@@ -4,11 +4,12 @@ import { Mail, ShieldCheck, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import OtpInput from "@/components/auth/OtpInput";
+import AppLogo from "@/components/Logo";
 
 const Logo = () => (
   <div className="flex flex-col items-center mb-7">
-    <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md mb-4">
-      <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+    <div className="h-12 w-12 mb-4">
+      <AppLogo />
     </div>
   </div>
 );

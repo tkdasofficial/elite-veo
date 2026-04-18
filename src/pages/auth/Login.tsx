@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/context/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
+import Logo from "@/components/Logo";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -52,8 +53,8 @@ const Login = () => {
   return (
     <AuthLayout backLabel="Back to chat" onBack={() => navigate("/")}>
       <div className="flex flex-col items-center mb-7">
-        <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md mb-4">
-          <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+        <div className="h-12 w-12 mb-4">
+          <Logo />
         </div>
         <h1 className="text-xl font-bold text-foreground">Welcome back</h1>
         <p className="text-sm text-muted-foreground mt-1">

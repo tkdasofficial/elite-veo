@@ -5,6 +5,7 @@ import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/context/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpInput from "@/components/auth/OtpInput";
+import Logo from "@/components/Logo";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -105,8 +106,8 @@ const Signup = () => {
     return (
       <AuthLayout backLabel="Back" onBack={() => setOtpStage(false)}>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md">
-            <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+          <div className="h-12 w-12">
+            <Logo />
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <ShieldCheck className="h-8 w-8 text-primary" />
@@ -148,8 +149,8 @@ const Signup = () => {
   return (
     <AuthLayout backLabel="Back to chat" onBack={() => navigate("/")}>
       <div className="flex flex-col items-center mb-7">
-        <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md mb-4">
-          <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+        <div className="h-12 w-12 mb-4">
+          <Logo />
         </div>
         <h1 className="text-xl font-bold text-foreground">Create your account</h1>
         <p className="text-sm text-muted-foreground mt-1">
