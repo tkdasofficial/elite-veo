@@ -4,7 +4,7 @@ project_id = "kvzylywteqjqqpxsplfp"
 verify_jwt = false
 
 [functions.generate-image]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analyze]
 verify_jwt = false
@@ -13,4 +13,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.edit-image]
-verify_jwt = true
+verify_jwt = false
