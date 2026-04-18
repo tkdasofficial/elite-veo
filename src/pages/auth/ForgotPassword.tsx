@@ -99,8 +99,8 @@ const ForgotPassword = () => {
     return (
       <AuthLayout>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md">
-            <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+          <div className="h-12 w-12">
+            <AppLogo />
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <CheckCircle2 className="h-8 w-8 text-primary" />
@@ -183,8 +183,8 @@ const ForgotPassword = () => {
     return (
       <AuthLayout backLabel="Back" onBack={() => setStage("email")}>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-md">
-            <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+          <div className="h-12 w-12">
+            <AppLogo />
           </div>
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <ShieldCheck className="h-8 w-8 text-primary" />
