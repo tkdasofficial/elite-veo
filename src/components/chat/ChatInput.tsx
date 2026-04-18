@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { ArrowUp, Paperclip, Zap, Sparkles, Brain, ChevronDown, X, ImageIcon, Loader2 } from "lucide-react";
+import { ArrowUp, Paperclip, Zap, Sparkles, Brain, ChevronDown, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -106,19 +106,20 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const ActiveIcon = activeModel.icon;
 
   return (
-    <div className="shrink-0 px-4 pb-4 pt-2">
+    <div className="shrink-0 px-4 pb-5 pt-2">
       <div className="mx-auto max-w-3xl">
-        <div className="relative flex flex-col rounded-3xl border border-border bg-secondary/40 backdrop-blur-sm px-4 pt-3 pb-3 shadow-sm">
+        <div className="flex flex-col rounded-2xl border border-border bg-background px-4 pt-3 pb-3">
+
           {attachedImageUrl && (
-            <div className="mb-2 inline-flex items-center gap-2 self-start rounded-xl border border-border/60 bg-background/60 p-1.5 pr-3">
-              <img src={attachedImageUrl} alt="attached" className="h-10 w-10 rounded-lg object-cover" />
-              <span className="text-[11px] text-muted-foreground">Image attached</span>
+            <div className="mb-2 inline-flex items-center gap-2 self-start rounded-lg border border-border bg-secondary/40 p-1.5 pr-3">
+              <img src={attachedImageUrl} alt="attached" className="h-9 w-9 rounded object-cover" />
+              <span className="text-xs text-muted-foreground">Image attached</span>
               <button
                 onClick={() => setAttachedImageUrl(null)}
-                className="ml-1 flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Remove attachment"
               >
-                <X className="h-3 w-3" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
@@ -135,7 +136,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           />
 
           <div className="flex items-center justify-between mt-2 gap-2">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {user && (
                 <>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
@@ -144,7 +145,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                     data-testid="button-attach"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
                   >
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
                   </button>
@@ -154,11 +155,11 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                       <button
                         type="button"
                         data-testid="button-model"
-                        className="flex items-center gap-1.5 h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                        className="flex items-center gap-1.5 h-8 px-2 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                       >
                         <ActiveIcon className="h-3.5 w-3.5" />
                         <span>{activeModel.label}</span>
-                        <ChevronDown className="h-3 w-3 opacity-60" />
+                        <ChevronDown className="h-3 w-3 opacity-50" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-44">
@@ -170,7 +171,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
                             onClick={() => setTier(m.id)}
                             className="gap-2 cursor-pointer"
                           >
-                            <Icon className="h-4 w-4 text-primary" />
+                            <Icon className="h-4 w-4" />
                             <div className="flex flex-col">
                               <span className="text-xs font-medium">{m.label}</span>
                               <span className="text-[10px] text-muted-foreground">{m.desc}</span>
@@ -184,8 +185,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
               )}
 
               {!user && (
-                <span className="flex items-center gap-1.5 h-8 px-2.5 rounded-full text-[11px] font-medium text-muted-foreground/70 bg-secondary/50">
-                  <Zap className="h-3 w-3" />
+                <span className="text-xs text-muted-foreground/60 px-1">
                   Guest mode · text only
                 </span>
               )}
@@ -195,14 +195,14 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
               onClick={handleSend}
               data-testid="button-send"
               disabled={!canSend}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all disabled:opacity-20 disabled:cursor-not-allowed hover:bg-primary/85 active:scale-95"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors disabled:opacity-20 disabled:cursor-not-allowed hover:opacity-80"
             >
               <ArrowUp className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground/40 mt-2">
+        <p className="text-center text-xs text-muted-foreground/40 mt-2">
           Elite Veo can make mistakes. Verify important information.
         </p>
       </div>

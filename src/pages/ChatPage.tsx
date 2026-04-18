@@ -324,16 +324,16 @@ const ChatPage = () => {
       />
 
       <div className="flex flex-1 flex-col min-w-0">
-        <div className="relative flex items-center px-4 py-3 lg:hidden border-b border-border/20">
+        <div className="relative flex items-center px-4 h-14 lg:hidden border-b border-border">
           <button
             data-testid="button-open-sidebar"
             onClick={() => setSidebarOpen(true)}
-            className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="shrink-0 flex h-8 w-8 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          <span className="absolute inset-x-14 text-center text-sm font-semibold text-foreground truncate pointer-events-none transition-all duration-300">
+          <span className="absolute inset-x-14 text-center text-sm font-medium text-foreground truncate pointer-events-none">
             {displayTitle}
           </span>
 
@@ -342,14 +342,14 @@ const ChatPage = () => {
           {user ? (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold shadow-sm"
+              className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold"
             >
               {user.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
             </button>
           ) : (
             <button
               onClick={() => navigate("/signup")}
-              className="shrink-0 inline-flex items-center rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+              className="shrink-0 inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity"
             >
               Get Started
             </button>

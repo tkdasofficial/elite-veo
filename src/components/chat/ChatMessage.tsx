@@ -18,12 +18,12 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  /* ── User bubble — right aligned ── */
+  /* ── User bubble ── */
   if (isUser) {
     return (
       <div className="flex justify-end px-4 py-2">
-        <div className="max-w-[78%] rounded-2xl rounded-tr-sm bg-secondary/70 border border-border/40 px-4 py-3 shadow-sm">
-          <p className="text-[14px] text-foreground leading-relaxed whitespace-pre-wrap break-words">
+        <div className="max-w-[78%] rounded-2xl bg-secondary px-4 py-3">
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
             {message.content}
           </p>
         </div>
@@ -31,31 +31,29 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
     );
   }
 
-  /* ── AI bubble empty + working → show inline indicator at the reply position ── */
+  /* ── Thinking indicator ── */
   const isEmpty = !message.content || message.content.trim() === "";
   if (isEmpty && workingState) {
     return (
-      <div className="px-4 py-3">
-        <div className="inline-flex items-center gap-2 rounded-full bg-secondary/40 border border-border/30 px-3 py-1.5 animate-fade-in">
-          <span className="flex gap-0.5">
+      <div className="px-4 py-4">
+        <div className="flex items-center gap-2">
+          <span className="flex gap-1">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce"
-                style={{ animationDelay: `${i * 130}ms` }}
+                className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40 animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
               />
             ))}
           </span>
-          <span className="text-[12px] font-medium text-primary/85 tracking-wide">
-            {workingState}
-          </span>
+          <span className="text-xs text-muted-foreground">{workingState}</span>
         </div>
       </div>
     );
   }
   if (isEmpty) return null;
 
-  /* ── AI response — left aligned, pure text ── */
+  /* ── AI response ── */
   return (
     <div className="group px-4 py-3">
       <div className="max-w-[88%]">
@@ -63,22 +61,22 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
           <ReactMarkdown
             components={{
               h1: ({ children }) => (
-                <h1 className="text-xl font-bold text-foreground mb-3 mt-5 first:mt-0 leading-tight">
+                <h1 className="text-xl font-semibold text-foreground mb-3 mt-5 first:mt-0 leading-snug">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="text-[15px] font-semibold text-foreground mb-2 mt-4 first:mt-0">
+                <h2 className="text-base font-semibold text-foreground mb-2 mt-4 first:mt-0">
                   {children}
                 </h2>
               ),
               h3: ({ children }) => (
-                <h3 className="text-[13px] font-semibold text-foreground/90 mb-1.5 mt-3 first:mt-0">
+                <h3 className="text-sm font-semibold text-foreground mb-1.5 mt-3 first:mt-0">
                   {children}
                 </h3>
               ),
               p: ({ children }) => (
-                <p className="text-[13px] text-foreground/85 mb-2.5 last:mb-0 leading-relaxed">
+                <p className="text-sm text-foreground/90 mb-2.5 last:mb-0 leading-relaxed">
                   {children}
                 </p>
               ),
@@ -86,25 +84,22 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
                 <strong className="font-semibold text-foreground">{children}</strong>
               ),
               em: ({ children }) => (
-                <em className="italic text-muted-foreground text-[12px]">{children}</em>
+                <em className="italic text-foreground/70">{children}</em>
               ),
-              hr: () => <hr className="border-border/30 my-4" />,
+              hr: () => <hr className="border-border my-4" />,
               ul: ({ children }) => (
-                <ul className="my-2 space-y-1 pl-0 list-none">{children}</ul>
+                <ul className="my-2 space-y-1 pl-4 list-disc text-sm text-foreground/90">{children}</ul>
               ),
               ol: ({ children }) => (
-                <ol className="my-2 space-y-1 pl-4 list-decimal text-[13px] text-foreground/80">
+                <ol className="my-2 space-y-1 pl-4 list-decimal text-sm text-foreground/90">
                   {children}
                 </ol>
               ),
               li: ({ children }) => (
-                <li className="flex gap-2 text-[13px] text-foreground/80 leading-relaxed">
-                  <span className="text-primary shrink-0 mt-0.5">•</span>
-                  <span>{children}</span>
-                </li>
+                <li className="text-sm text-foreground/90 leading-relaxed">{children}</li>
               ),
               blockquote: ({ children }) => (
-                <blockquote className="border-l-2 border-primary/50 pl-3 my-2.5 italic text-[12px] text-muted-foreground leading-relaxed">
+                <blockquote className="border-l-2 border-border pl-3 my-2.5 text-sm text-muted-foreground leading-relaxed">
                   {children}
                 </blockquote>
               ),
@@ -113,7 +108,7 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary underline underline-offset-2 hover:text-primary/80 break-words"
+                  className="text-foreground underline underline-offset-2 hover:opacity-70 break-words"
                 >
                   {children}
                 </a>
@@ -123,7 +118,7 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
                   src={src as string}
                   alt={alt || ""}
                   loading="lazy"
-                  className="my-3 rounded-xl border border-border/40 max-w-full h-auto"
+                  className="my-3 rounded-lg border border-border max-w-full h-auto"
                 />
               ),
               code: ({ children, className }) => {
@@ -131,9 +126,9 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
                 const lang = className?.replace("language-", "") || "code";
                 if (isBlock) {
                   return (
-                    <div className="relative my-3 rounded-xl overflow-hidden border border-border/40">
-                      <div className="flex items-center justify-between bg-muted/60 px-3 py-1.5">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    <div className="relative my-3 rounded-lg overflow-hidden border border-border">
+                      <div className="flex items-center justify-between bg-secondary px-3 py-1.5">
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                           {lang}
                         </span>
                         <button
@@ -144,14 +139,14 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
                           {copied ? "Copied" : "Copy"}
                         </button>
                       </div>
-                      <pre className="bg-muted/25 p-3 overflow-x-auto text-[11px] leading-relaxed">
+                      <pre className="bg-secondary/40 p-3 overflow-x-auto text-xs leading-relaxed">
                         <code className="font-mono text-foreground/90">{children}</code>
                       </pre>
                     </div>
                   );
                 }
                 return (
-                  <code className="bg-muted/50 px-1.5 py-0.5 rounded-md text-[11px] font-mono text-foreground/80">
+                  <code className="bg-secondary px-1.5 py-0.5 rounded text-xs font-mono text-foreground/80">
                     {children}
                   </code>
                 );
@@ -162,11 +157,10 @@ const ChatMessageComponent = ({ message, workingState }: ChatMessageProps) => {
           </ReactMarkdown>
         </div>
 
-        {/* Copy action — appears on hover */}
         <div className="flex items-center gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
             {copied ? "Copied" : "Copy"}

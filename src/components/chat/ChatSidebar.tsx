@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   SquarePen, LogOut, Settings, Video, FileText, Shield, ChevronUp,
-  Search, X, Sparkles, MessageSquare,
+  Search, X, MessageSquare,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Conversation } from "@/types/chat";
@@ -77,32 +77,29 @@ const ChatSidebar = ({
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden animate-fade-in"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-sidebar border-r border-sidebar-border/50 transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-[272px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-sidebar border-r border-sidebar-border transition-transform duration-200 lg:relative lg:translate-x-0 lg:w-[260px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* ── Header: logo + new chat ── */}
-        <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-3">
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 h-14 shrink-0">
           <button
             onClick={() => { onClose(); navigate("/"); }}
-            className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-sidebar-accent/40 transition-colors min-w-0"
+            className="flex items-center gap-2 px-1 rounded hover:opacity-70 transition-opacity min-w-0"
           >
-            <div className="relative shrink-0">
-              <div className="relative flex h-7 w-7 items-center justify-center">
-                <Logo />
-              </div>
+            <div className="flex h-6 w-6 items-center justify-center shrink-0">
+              <Logo />
             </div>
-            <span className="text-[13px] font-semibold text-sidebar-foreground tracking-tight truncate">
+            <span className="text-sm font-semibold text-sidebar-foreground truncate">
               Elite Veo
             </span>
           </button>
@@ -111,29 +108,13 @@ const ChatSidebar = ({
             data-testid="button-new-chat"
             onClick={onNewConversation}
             title="New chat"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <SquarePen className="h-4 w-4" />
           </button>
         </div>
 
-        {/* ── New chat CTA pill ── */}
-        <div className="px-3 pb-2">
-          <button
-            onClick={onNewConversation}
-            className="group flex w-full items-center gap-2.5 rounded-xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-2.5 text-left hover:border-primary/50 hover:bg-sidebar-accent transition-all"
-          >
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <span className="flex-1 text-[13px] font-medium text-sidebar-foreground">New chat</span>
-            <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-sidebar-border/70 bg-background/50 px-1.5 text-[10px] font-mono text-sidebar-foreground/50">
-              ⌘N
-            </kbd>
-          </button>
-        </div>
-
-        {/* ── Search ── */}
+        {/* Search */}
         {conversations.length > 0 && (
           <div className="px-3 pb-2">
             <div className="relative">
@@ -142,12 +123,12 @@ const ChatSidebar = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search chats…"
-                className="w-full h-8 rounded-lg bg-sidebar-accent/40 border border-transparent focus:border-primary/40 focus:bg-sidebar-accent/60 pl-8 pr-7 text-[12px] text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none transition-colors"
+                className="w-full h-8 rounded-lg bg-sidebar-accent/50 border-0 pl-8 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-sidebar-border transition-colors"
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-border/50"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sidebar-foreground/40 hover:text-sidebar-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -156,31 +137,25 @@ const ChatSidebar = ({
           </div>
         )}
 
-        {/* ── Conversation list ── */}
+        {/* Conversation list */}
         <ScrollArea className="flex-1 px-2">
           {conversations.length === 0 ? (
-            <div className="px-3 py-10 text-center flex flex-col items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sidebar-accent/50">
-                <MessageSquare className="h-4 w-4 text-sidebar-foreground/40" />
-              </div>
-              <p className="text-[12px] text-sidebar-foreground/40 leading-relaxed">
-                No chats yet.<br />Start by describing an idea.
-              </p>
+            <div className="px-3 py-12 text-center">
+              <MessageSquare className="h-5 w-5 text-sidebar-foreground/20 mx-auto mb-2" />
+              <p className="text-xs text-sidebar-foreground/40">No chats yet</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-3 py-8 text-center">
-              <p className="text-[12px] text-sidebar-foreground/40">
-                No matches for "{query}"
-              </p>
+              <p className="text-xs text-sidebar-foreground/40">No matches for "{query}"</p>
             </div>
           ) : (
-            <div className="py-1 space-y-4">
+            <div className="py-1 space-y-3">
               {groupOrder.map((group) => {
                 const convs = groups[group];
                 if (!convs.length) return null;
                 return (
-                  <div key={group} className="animate-fade-in">
-                    <p className="px-3 py-1 text-[10px] font-semibold text-sidebar-foreground/40 uppercase tracking-[0.12em]">
+                  <div key={group}>
+                    <p className="px-3 py-1 text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
                       {group}
                     </p>
                     <div className="space-y-0.5">
@@ -192,15 +167,12 @@ const ChatSidebar = ({
                             data-testid={`conv-${conv.id}`}
                             onClick={() => onSelectConversation(conv.id)}
                             className={cn(
-                              "group relative w-full text-left truncate rounded-lg pl-3 pr-3 py-2 text-[13px] transition-all",
+                              "w-full text-left truncate rounded-lg px-3 py-2 text-sm transition-colors",
                               active
                                 ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                                : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                             )}
                           >
-                            {active && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-r-full bg-primary" />
-                            )}
                             <span className="block truncate">{conv.title}</span>
                           </button>
                         );
@@ -213,40 +185,32 @@ const ChatSidebar = ({
           )}
         </ScrollArea>
 
-        {/* ── Bottom section ── */}
-        <div className="shrink-0 border-t border-sidebar-border/60 bg-sidebar/50">
+        {/* Bottom section */}
+        <div className="shrink-0 border-t border-sidebar-border px-2 py-2 space-y-0.5">
 
-          {/* My Creations */}
-          <div className="px-2 pt-2">
-            <button
-              onClick={() => go("/my-creations")}
-              className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-            >
-              <Video className="h-4 w-4 shrink-0 group-hover:text-primary transition-colors" />
-              <span className="text-[13px] font-medium">My Creations</span>
-            </button>
-          </div>
+          <button
+            onClick={() => go("/my-creations")}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          >
+            <Video className="h-4 w-4 shrink-0" />
+            My Creations
+          </button>
 
-          {/* User profile */}
           {user && (
-            <div className="px-2 pt-1 pb-2 relative">
+            <div className="relative">
               <button
                 data-testid="button-user-profile"
                 onClick={() => setShowUserMenu((v) => !v)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 transition-colors",
+                  "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 transition-colors",
                   showUserMenu ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/70"
                 )}
               >
-                <div className="relative shrink-0">
-                  <div className="absolute inset-0 rounded-full bg-primary/40 blur-md" aria-hidden />
-                  <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold ring-2 ring-sidebar">
-                    {initials}
-                  </div>
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
+                  {initials}
                 </div>
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-[13px] font-medium text-sidebar-foreground truncate">{user.name}</p>
-                  <p className="text-[11px] text-sidebar-foreground/50 truncate">{user.email}</p>
+                  <p className="text-sm text-sidebar-foreground truncate">{user.name}</p>
                 </div>
                 <ChevronUp
                   className={cn(
@@ -259,47 +223,40 @@ const ChatSidebar = ({
               {showUserMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
-                  <div className="absolute bottom-[calc(100%-4px)] left-2 right-2 z-20 rounded-2xl border border-sidebar-border bg-popover shadow-2xl overflow-hidden mb-1 animate-scale-in origin-bottom">
-
+                  <div className="absolute bottom-[calc(100%+4px)] left-0 right-0 z-20 rounded-xl border border-sidebar-border bg-popover shadow-lg overflow-hidden">
                     <button
                       onClick={() => go("/settings")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Settings className="h-4 w-4 shrink-0" />
                       Settings
                     </button>
-
                     <button
                       onClick={() => go("/my-creations")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Video className="h-4 w-4 shrink-0" />
                       My Creations
                     </button>
-
                     <div className="h-px bg-sidebar-border mx-3" />
-
                     <button
                       onClick={() => go("/terms")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <FileText className="h-4 w-4 shrink-0" />
-                      Terms & Conditions
+                      Terms
                     </button>
-
                     <button
                       onClick={() => go("/privacy")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Shield className="h-4 w-4 shrink-0" />
-                      Privacy Policy
+                      Privacy
                     </button>
-
                     <div className="h-px bg-sidebar-border mx-3" />
-
                     <button
                       onClick={handleSignOut}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[13px] text-destructive hover:bg-destructive/10 transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
                       Sign out
@@ -310,18 +267,17 @@ const ChatSidebar = ({
             </div>
           )}
 
-          {/* Guest CTA */}
           {!user && (
-            <div className="px-3 pb-3 pt-2">
+            <div className="pt-1 pb-1 space-y-1">
               <button
                 onClick={() => go("/signup")}
-                className="w-full rounded-xl bg-primary py-2.5 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
               >
-                Get Started — it's free
+                Get Started
               </button>
               <button
                 onClick={() => go("/login")}
-                className="w-full mt-1.5 rounded-xl py-2 text-[13px] font-medium text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="w-full rounded-lg py-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
               >
                 Sign In
               </button>
