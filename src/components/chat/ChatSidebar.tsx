@@ -9,7 +9,6 @@ import { Conversation } from "@/types/chat";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { isToday, isYesterday, subDays, isAfter } from "date-fns";
-import Logo from "@/components/Logo";
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -79,14 +78,14 @@ const ChatSidebar = ({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-sidebar border-r border-sidebar-border transition-transform duration-200 lg:relative lg:translate-x-0 lg:w-[260px]",
+          "fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col bg-[hsl(var(--sidebar-background))] border-r border-sidebar-border transition-transform duration-200 lg:relative lg:translate-x-0 lg:w-[260px]",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -94,12 +93,9 @@ const ChatSidebar = ({
         <div className="flex items-center justify-between px-3 h-14 shrink-0">
           <button
             onClick={() => { onClose(); navigate("/"); }}
-            className="flex items-center gap-2 px-1 rounded hover:opacity-70 transition-opacity min-w-0"
+            className="flex items-center px-1 rounded hover:opacity-70 transition-opacity"
           >
-            <div className="flex h-6 w-6 items-center justify-center shrink-0">
-              <Logo />
-            </div>
-            <span className="text-sm font-semibold text-sidebar-foreground truncate">
+            <span className="text-base font-semibold text-sidebar-foreground">
               Elite Veo
             </span>
           </button>
@@ -108,54 +104,52 @@ const ChatSidebar = ({
             data-testid="button-new-chat"
             onClick={onNewConversation}
             title="New chat"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <SquarePen className="h-4 w-4" />
           </button>
         </div>
 
         {/* Search */}
-        {conversations.length > 0 && (
-          <div className="px-3 pb-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40 pointer-events-none" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search chats…"
-                className="w-full h-8 rounded-lg bg-sidebar-accent/50 border-0 pl-8 pr-7 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-sidebar-border transition-colors"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sidebar-foreground/40 hover:text-sidebar-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
+        <div className="px-3 pb-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40 pointer-events-none" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search"
+              className="w-full h-9 rounded-xl bg-sidebar-accent/60 pl-8 pr-7 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none transition-colors border border-transparent focus:border-sidebar-border/60"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-sidebar-foreground/40 hover:text-sidebar-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Conversation list */}
         <ScrollArea className="flex-1 px-2">
           {conversations.length === 0 ? (
-            <div className="px-3 py-12 text-center">
+            <div className="px-3 py-16 text-center">
               <MessageSquare className="h-5 w-5 text-sidebar-foreground/20 mx-auto mb-2" />
-              <p className="text-xs text-sidebar-foreground/40">No chats yet</p>
+              <p className="text-sm text-sidebar-foreground/40">No chats yet</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-3 py-8 text-center">
-              <p className="text-xs text-sidebar-foreground/40">No matches for "{query}"</p>
+              <p className="text-sm text-sidebar-foreground/40">No matches</p>
             </div>
           ) : (
-            <div className="py-1 space-y-3">
+            <div className="py-1 space-y-4">
               {groupOrder.map((group) => {
                 const convs = groups[group];
                 if (!convs.length) return null;
                 return (
                   <div key={group}>
-                    <p className="px-3 py-1 text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-wider">
+                    <p className="px-3 pb-1 text-xs font-semibold text-sidebar-foreground/40">
                       {group}
                     </p>
                     <div className="space-y-0.5">
@@ -167,7 +161,7 @@ const ChatSidebar = ({
                             data-testid={`conv-${conv.id}`}
                             onClick={() => onSelectConversation(conv.id)}
                             className={cn(
-                              "w-full text-left truncate rounded-lg px-3 py-2 text-sm transition-colors",
+                              "w-full text-left rounded-lg px-3 py-2 text-sm transition-colors",
                               active
                                 ? "bg-sidebar-accent text-sidebar-foreground font-medium"
                                 : "text-sidebar-foreground/65 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
@@ -190,7 +184,7 @@ const ChatSidebar = ({
 
           <button
             onClick={() => go("/my-creations")}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
           >
             <Video className="h-4 w-4 shrink-0" />
             My Creations
@@ -202,16 +196,16 @@ const ChatSidebar = ({
                 data-testid="button-user-profile"
                 onClick={() => setShowUserMenu((v) => !v)}
                 className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
                   showUserMenu ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/70"
                 )}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
                   {initials}
                 </div>
-                <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm text-sidebar-foreground truncate">{user.name}</p>
-                </div>
+                <span className="flex-1 text-left text-sm text-sidebar-foreground truncate">
+                  {user.name}
+                </span>
                 <ChevronUp
                   className={cn(
                     "h-3.5 w-3.5 text-sidebar-foreground/40 transition-transform shrink-0",
@@ -223,17 +217,17 @@ const ChatSidebar = ({
               {showUserMenu && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
-                  <div className="absolute bottom-[calc(100%+4px)] left-0 right-0 z-20 rounded-xl border border-sidebar-border bg-popover shadow-lg overflow-hidden">
+                  <div className="absolute bottom-[calc(100%+4px)] left-0 right-0 z-20 rounded-2xl border border-sidebar-border bg-popover shadow-xl overflow-hidden">
                     <button
                       onClick={() => go("/settings")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Settings className="h-4 w-4 shrink-0" />
                       Settings
                     </button>
                     <button
                       onClick={() => go("/my-creations")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Video className="h-4 w-4 shrink-0" />
                       My Creations
@@ -241,14 +235,14 @@ const ChatSidebar = ({
                     <div className="h-px bg-sidebar-border mx-3" />
                     <button
                       onClick={() => go("/terms")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <FileText className="h-4 w-4 shrink-0" />
                       Terms
                     </button>
                     <button
                       onClick={() => go("/privacy")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Shield className="h-4 w-4 shrink-0" />
                       Privacy
@@ -256,7 +250,7 @@ const ChatSidebar = ({
                     <div className="h-px bg-sidebar-border mx-3" />
                     <button
                       onClick={handleSignOut}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <LogOut className="h-4 w-4 shrink-0" />
                       Sign out
@@ -268,16 +262,16 @@ const ChatSidebar = ({
           )}
 
           {!user && (
-            <div className="pt-1 pb-1 space-y-1">
+            <div className="pt-1 space-y-1">
               <button
                 onClick={() => go("/signup")}
-                className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+                className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
               >
-                Get Started
+                Get Started — it's free
               </button>
               <button
                 onClick={() => go("/login")}
-                className="w-full rounded-lg py-2 text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="w-full rounded-xl py-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
               >
                 Sign In
               </button>

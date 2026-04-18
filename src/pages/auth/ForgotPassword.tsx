@@ -4,15 +4,6 @@ import { Mail, ShieldCheck, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { useAuth } from "@/context/AuthContext";
 import OtpInput from "@/components/auth/OtpInput";
-import AppLogo from "@/components/Logo";
-
-const Logo = () => (
-  <div className="flex flex-col items-center mb-7">
-    <div className="h-12 w-12 mb-4">
-      <AppLogo />
-    </div>
-  </div>
-);
 
 type Stage = "email" | "otp" | "password" | "done";
 
@@ -94,24 +85,22 @@ const ForgotPassword = () => {
     setStage("done");
   };
 
-  /* ─── DONE ─── */
+  /* ── DONE ── */
   if (stage === "done") {
     return (
       <AuthLayout>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12">
-            <AppLogo />
-          </div>
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Elite Veo</p>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <CheckCircle2 className="h-7 w-7 text-foreground" />
           </div>
           <div>
-            <p className="text-xl font-bold text-foreground mb-1">Password reset!</p>
-            <p className="text-sm text-muted-foreground">Your password has been updated successfully.</p>
+            <p className="text-xl font-semibold text-foreground mb-1">Password updated!</p>
+            <p className="text-sm text-muted-foreground">Your password has been reset successfully.</p>
           </div>
           <button
             onClick={() => navigate("/")}
-            className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             Continue to App
           </button>
@@ -120,18 +109,18 @@ const ForgotPassword = () => {
     );
   }
 
-  /* ─── NEW PASSWORD ─── */
+  /* ── NEW PASSWORD ── */
   if (stage === "password") {
     return (
       <AuthLayout backLabel="Back" onBack={() => setStage("otp")}>
-        <Logo />
-        <div className="text-center -mt-3 mb-7">
-          <h1 className="text-xl font-bold text-foreground">Set new password</h1>
+        <div className="flex flex-col items-center mb-8">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Elite Veo</p>
+          <h1 className="text-2xl font-semibold text-foreground">Set new password</h1>
           <p className="text-sm text-muted-foreground mt-1">Choose a strong password for your account</p>
         </div>
         <form onSubmit={handlePasswordSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">New password</label>
+            <label className="block text-xs text-muted-foreground mb-1.5">New password</label>
             <div className="relative">
               <input
                 type={showNew ? "text" : "password"}
@@ -140,7 +129,7 @@ const ForgotPassword = () => {
                 placeholder="Min. 6 characters"
                 autoComplete="new-password"
                 autoFocus
-                className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+                className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
               />
               <button type="button" onClick={() => setShowNew((v) => !v)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -149,7 +138,7 @@ const ForgotPassword = () => {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Confirm password</label>
+            <label className="block text-xs text-muted-foreground mb-1.5">Confirm password</label>
             <div className="relative">
               <input
                 type={showConfirm ? "text" : "password"}
@@ -157,7 +146,7 @@ const ForgotPassword = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter password"
                 autoComplete="new-password"
-                className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+                className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
               />
               <button type="button" onClick={() => setShowConfirm((v) => !v)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -165,11 +154,11 @@ const ForgotPassword = () => {
               </button>
             </div>
           </div>
-          {resetError && <p className="text-xs text-destructive px-1">{resetError}</p>}
+          {resetError && <p className="text-xs text-destructive">{resetError}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? "Resetting…" : "Reset Password"}
           </button>
@@ -178,22 +167,20 @@ const ForgotPassword = () => {
     );
   }
 
-  /* ─── OTP ─── */
+  /* ── OTP ── */
   if (stage === "otp") {
     return (
       <AuthLayout backLabel="Back" onBack={() => setStage("email")}>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12">
-            <AppLogo />
-          </div>
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Elite Veo</p>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <ShieldCheck className="h-7 w-7 text-foreground" />
           </div>
           <div>
-            <p className="text-xl font-bold text-foreground mb-1">Enter reset code</p>
+            <p className="text-xl font-semibold text-foreground mb-1">Check your email</p>
             <p className="text-sm text-muted-foreground">
               We sent an 8-digit code to{" "}
-              <span className="font-semibold text-foreground break-all">{email}</span>
+              <span className="font-medium text-foreground break-all">{email}</span>
             </p>
           </div>
           <div className="w-full">
@@ -210,28 +197,26 @@ const ForgotPassword = () => {
             type="button"
             onClick={handleResendOtp}
             disabled={resendSeconds > 0}
-            className="text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
           >
-            {resendSeconds > 0
-              ? `Resend code in ${resendSeconds}s`
-              : "Didn't get it? Resend code"}
+            {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}
           </button>
         </div>
       </AuthLayout>
     );
   }
 
-  /* ─── EMAIL ─── */
+  /* ── EMAIL ── */
   return (
     <AuthLayout backLabel="Back to sign in" onBack={() => navigate("/login")}>
-      <Logo />
-      <div className="text-center -mt-3 mb-7">
-        <h1 className="text-xl font-bold text-foreground">Forgot password?</h1>
-        <p className="text-sm text-muted-foreground mt-1">Enter your email and we'll send you a verification code</p>
+      <div className="flex flex-col items-center mb-8">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Elite Veo</p>
+        <h1 className="text-2xl font-semibold text-foreground">Forgot password?</h1>
+        <p className="text-sm text-muted-foreground mt-1">Enter your email to receive a reset code</p>
       </div>
       <form onSubmit={handleEmailSubmit} className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email address</label>
+          <label className="block text-xs text-muted-foreground mb-1.5">Email address</label>
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
@@ -241,22 +226,22 @@ const ForgotPassword = () => {
               placeholder="you@example.com"
               autoComplete="email"
               autoFocus
-              className="w-full rounded-2xl border border-border bg-secondary/30 pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+              className="w-full rounded-xl border border-border bg-secondary/30 pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
             />
           </div>
-          {emailError && <p className="text-xs text-destructive mt-1.5 px-1">{emailError}</p>}
+          {emailError && <p className="text-xs text-destructive mt-1.5">{emailError}</p>}
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
-          {loading ? "Sending code…" : "Send Verification Code"}
+          {loading ? "Sending code…" : "Send Reset Code"}
         </button>
       </form>
       <p className="text-center text-sm text-muted-foreground mt-6">
         Remember your password?{" "}
-        <Link to="/login" className="font-medium text-primary hover:underline">Sign In</Link>
+        <Link to="/login" className="font-medium text-foreground hover:underline">Sign In</Link>
       </p>
     </AuthLayout>
   );

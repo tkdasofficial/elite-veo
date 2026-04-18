@@ -26,10 +26,10 @@ const applyTheme = (mode: ThemeMode): ResolvedTheme => {
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") return "system";
-    return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || "system";
+    return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || "dark";
   });
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-    typeof window === "undefined" ? "dark" : applyTheme((localStorage.getItem(STORAGE_KEY) as ThemeMode) || "system"),
+    typeof window === "undefined" ? "dark" : applyTheme((localStorage.getItem(STORAGE_KEY) as ThemeMode) || "dark"),
   );
 
   // Re-apply when theme changes

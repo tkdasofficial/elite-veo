@@ -5,7 +5,6 @@ import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "@/context/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpInput from "@/components/auth/OtpInput";
-import Logo from "@/components/Logo";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -106,17 +105,15 @@ const Signup = () => {
     return (
       <AuthLayout backLabel="Back" onBack={() => setOtpStage(false)}>
         <div className="flex flex-col items-center text-center gap-5">
-          <div className="h-12 w-12">
-            <Logo />
-          </div>
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Elite Veo</p>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+            <ShieldCheck className="h-7 w-7 text-foreground" />
           </div>
           <div>
-            <p className="text-xl font-bold text-foreground mb-1">Verify your email</p>
+            <p className="text-xl font-semibold text-foreground mb-1">Check your email</p>
             <p className="text-sm text-muted-foreground">
-              Enter the 8-digit code we sent to{" "}
-              <span className="font-semibold text-foreground break-all">{email}</span>
+              We sent an 8-digit code to{" "}
+              <span className="font-medium text-foreground break-all">{email}</span>
             </p>
           </div>
 
@@ -135,11 +132,9 @@ const Signup = () => {
             type="button"
             onClick={handleResend}
             disabled={resendSeconds > 0}
-            className="text-sm text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+            className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
           >
-            {resendSeconds > 0
-              ? `Resend code in ${resendSeconds}s`
-              : "Didn't get it? Resend code"}
+            {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}
           </button>
         </div>
       </AuthLayout>
@@ -148,19 +143,17 @@ const Signup = () => {
 
   return (
     <AuthLayout backLabel="Back to chat" onBack={() => navigate("/")}>
-      <div className="flex flex-col items-center mb-7">
-        <div className="h-12 w-12 mb-4">
-          <Logo />
-        </div>
-        <h1 className="text-xl font-bold text-foreground">Create your account</h1>
+      <div className="flex flex-col items-center mb-8">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Elite Veo</p>
+        <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {pendingPrompt ? "Sign up to create your video" : "Start creating with AI"}
+          {pendingPrompt ? "Sign up to continue" : "Start creating with AI"}
         </p>
       </div>
 
       {pendingPrompt && (
-        <div className="rounded-2xl border border-border/40 bg-secondary/20 px-4 py-3 mb-5">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Your video idea</p>
+        <div className="rounded-xl border border-border bg-secondary/30 px-4 py-3 mb-5">
+          <p className="text-xs text-muted-foreground mb-1">Your pending request</p>
           <p className="text-sm text-foreground line-clamp-2">{pendingPrompt}</p>
         </div>
       )}
@@ -169,21 +162,21 @@ const Signup = () => {
         type="button"
         onClick={handleGoogle}
         disabled={googleLoading || loading}
-        className="w-full h-11 rounded-2xl border border-border bg-secondary/30 flex items-center justify-center gap-2.5 text-sm font-semibold text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors mb-4"
+        className="w-full h-11 rounded-xl border border-border bg-secondary/30 flex items-center justify-center gap-3 text-sm font-medium text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors mb-5"
       >
         <FcGoogle className="h-5 w-5" />
         {googleLoading ? "Redirecting…" : "Continue with Google"}
       </button>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-5">
         <div className="flex-1 border-t border-border/40" />
-        <span className="text-[11px] text-muted-foreground">or sign up with email</span>
+        <span className="text-xs text-muted-foreground">or</span>
         <div className="flex-1 border-t border-border/40" />
       </div>
 
       <form onSubmit={handleFormSubmit} className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Display name</label>
+          <label className="block text-xs text-muted-foreground mb-1.5">Display name</label>
           <input
             type="text"
             data-testid="input-name"
@@ -191,11 +184,11 @@ const Signup = () => {
             onChange={(e) => setName(e.target.value)}
             placeholder="Alex Johnson"
             autoComplete="name"
-            className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+          <label className="block text-xs text-muted-foreground mb-1.5">
             Username <span className="text-muted-foreground/50">(optional)</span>
           </label>
           <input
@@ -204,11 +197,11 @@ const Signup = () => {
             onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())}
             placeholder="alexj"
             autoComplete="username"
-            className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email</label>
+          <label className="block text-xs text-muted-foreground mb-1.5">Email</label>
           <input
             type="email"
             data-testid="input-email"
@@ -216,11 +209,11 @@ const Signup = () => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
-            className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+            className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Password</label>
+          <label className="block text-xs text-muted-foreground mb-1.5">Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -229,7 +222,7 @@ const Signup = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 6 characters"
               autoComplete="new-password"
-              className="w-full rounded-2xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition-colors"
+              className="w-full rounded-xl border border-border bg-secondary/30 px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
             />
             <button
               type="button"
@@ -241,23 +234,23 @@ const Signup = () => {
           </div>
         </div>
 
-        {error && <p data-testid="text-error" className="text-xs text-destructive px-1">{error}</p>}
+        {error && <p data-testid="text-error" className="text-xs text-destructive">{error}</p>}
 
         <button
           type="submit"
           data-testid="button-signup"
           disabled={loading || googleLoading}
-          className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors mt-1"
+          className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity mt-1"
         >
           {loading ? "Sending code…" : "Create Account"}
         </button>
       </form>
 
-      <p className="text-center text-sm text-muted-foreground mt-5">
+      <p className="text-center text-sm text-muted-foreground mt-6">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-primary hover:underline">Sign In</Link>
+        <Link to="/login" className="font-medium text-foreground hover:underline">Sign In</Link>
       </p>
-      <p className="text-center text-[11px] text-muted-foreground/40 mt-5">
+      <p className="text-center text-xs text-muted-foreground/40 mt-4">
         By creating an account you agree to our Terms of Service
       </p>
     </AuthLayout>

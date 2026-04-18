@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, User, Bell, Shield, Palette, Trash2, ChevronRight,
-  Check, Monitor, Sun, Moon, KeyRound, Loader2, ShieldCheck,
+  ArrowLeft, User, Bell, Shield, Palette, LogOut, ChevronRight,
+  Check, Monitor, Sun, Moon, KeyRound, Loader2, ShieldCheck, FileText,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme, ThemeMode } from "@/context/ThemeContext";
@@ -30,19 +30,20 @@ const SettingsRow = ({
   <button
     onClick={onClick}
     className={[
-      "flex w-full items-center gap-3.5 px-4 py-3.5 transition-colors text-left",
-      danger ? "text-destructive hover:bg-destructive/5" : "text-foreground hover:bg-secondary/50",
+      "flex w-full items-center gap-4 px-4 py-4 text-left transition-colors",
+      danger
+        ? "text-destructive hover:bg-destructive/5"
+        : "text-foreground hover:bg-secondary/40",
     ].join(" ")}
   >
-    <div className={["flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-      danger ? "bg-destructive/10" : "bg-secondary"].join(" ")}>
-      <Icon className="h-4 w-4" />
-    </div>
+    <Icon className="h-5 w-5 shrink-0 text-current opacity-80" />
     <div className="flex-1 min-w-0">
-      <p className="text-[13px] font-medium">{label}</p>
-      {sublabel && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{sublabel}</p>}
+      <p className="text-sm font-medium">{label}</p>
+      {sublabel && (
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">{sublabel}</p>
+      )}
     </div>
-    {trailing ?? <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />}
+    {trailing ?? <ChevronRight className="h-4 w-4 text-muted-foreground/30 shrink-0" />}
   </button>
 );
 
@@ -80,56 +81,87 @@ const Settings = () => {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
       {/* Header */}
-      <div className="relative flex items-center px-4 py-3 border-b border-border/20 shrink-0">
+      <div className="flex items-center px-4 h-14 shrink-0">
         <button
           onClick={() => navigate("/")}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
         >
-          <ArrowLeft className="h-4.5 w-4.5" />
+          <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="absolute inset-x-14 text-center text-sm font-semibold text-foreground pointer-events-none">
+        <h1 className="flex-1 text-center text-sm font-semibold text-foreground pr-8">
           Settings
         </h1>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-8">
+
+        {/* Profile card */}
         {user && (
-          <div className="mx-4 mt-5 mb-2 rounded-2xl border border-border bg-card/50 p-4 flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-base font-bold">
+          <div className="flex flex-col items-center py-6 px-4 mb-2">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground text-2xl font-semibold mb-3">
               {initials}
             </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground text-sm truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-            </div>
+            <p className="text-base font-semibold text-foreground">{user.name}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
           </div>
         )}
 
-        <div className="mx-4 mt-4">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-1 px-1">Account</p>
-          <div className="rounded-2xl border border-border overflow-hidden divide-y divide-border/50">
-            <SettingsRow icon={User} label="Edit Profile" sublabel="Name, email" onClick={() => setProfileOpen(true)} />
-            <SettingsRow icon={KeyRound} label="Change Password" sublabel="Verify with OTP, then set new password" onClick={() => setPwOpen(true)} />
-            <SettingsRow icon={Bell} label="Notifications" sublabel="Push, email preferences" onClick={() => setNotifOpen(true)} />
+        {/* Account section */}
+        <div className="px-4 mb-3">
+          <p className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-1 px-1">Account</p>
+          <div className="rounded-2xl bg-secondary/30 overflow-hidden divide-y divide-border/30">
+            <SettingsRow
+              icon={User}
+              label="Edit Profile"
+              sublabel="Name, display preferences"
+              onClick={() => setProfileOpen(true)}
+            />
+            <SettingsRow
+              icon={KeyRound}
+              label="Change Password"
+              sublabel="Update via email verification"
+              onClick={() => setPwOpen(true)}
+            />
+            <SettingsRow
+              icon={Bell}
+              label="Notifications"
+              sublabel="Push and email preferences"
+              onClick={() => setNotifOpen(true)}
+            />
           </div>
         </div>
 
-        <div className="mx-4 mt-4">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-1 px-1">App</p>
-          <div className="rounded-2xl border border-border overflow-hidden divide-y divide-border/50">
-            <SettingsRow icon={Palette} label="Appearance" sublabel={themeLabel} onClick={() => setAppearanceOpen(true)} />
-            <SettingsRow icon={Shield} label="Privacy Policy" onClick={() => navigate("/privacy")} />
-            <SettingsRow icon={Shield} label="Terms & Conditions" onClick={() => navigate("/terms")} />
+        {/* App section */}
+        <div className="px-4 mb-3">
+          <p className="text-xs text-muted-foreground/60 uppercase tracking-wider mb-1 px-1">App</p>
+          <div className="rounded-2xl bg-secondary/30 overflow-hidden divide-y divide-border/30">
+            <SettingsRow
+              icon={Palette}
+              label="Appearance"
+              sublabel={themeLabel}
+              onClick={() => setAppearanceOpen(true)}
+            />
+            <SettingsRow
+              icon={FileText}
+              label="Terms & Conditions"
+              onClick={() => navigate("/terms")}
+            />
+            <SettingsRow
+              icon={Shield}
+              label="Privacy Policy"
+              onClick={() => navigate("/privacy")}
+            />
           </div>
         </div>
 
-        <div className="mx-4 mt-4">
-          <div className="rounded-2xl border border-border overflow-hidden divide-y divide-border/50">
-            <SettingsRow icon={Trash2} label="Sign Out" onClick={handleSignOut} danger />
+        {/* Sign out */}
+        <div className="px-4 mb-3">
+          <div className="rounded-2xl bg-secondary/30 overflow-hidden">
+            <SettingsRow icon={LogOut} label="Sign Out" onClick={handleSignOut} danger />
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground/40 mt-6">Elite Veo v1.0.0</p>
+        <p className="text-center text-xs text-muted-foreground/30 mt-4">Elite Veo v1.0.0</p>
       </div>
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
@@ -140,7 +172,7 @@ const Settings = () => {
   );
 };
 
-/* ───────────── Edit Profile ───────────── */
+/* ── Edit Profile ── */
 const EditProfileDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { user } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
@@ -186,7 +218,7 @@ const EditProfileDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange
   );
 };
 
-/* ───────────── Notifications ───────────── */
+/* ── Notifications ── */
 const NotificationsDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const [prefs, setPrefs] = useState(readNotifs);
 
@@ -225,7 +257,7 @@ const NotificationsDialog = ({ open, onOpenChange }: { open: boolean; onOpenChan
   );
 };
 
-/* ───────────── Appearance ───────────── */
+/* ── Appearance ── */
 const AppearanceDialog = ({
   open, onOpenChange, theme, setTheme,
 }: {
@@ -237,7 +269,7 @@ const AppearanceDialog = ({
   const options: { value: ThemeMode; label: string; desc: string; icon: React.ElementType }[] = [
     { value: "system", label: "System default", desc: "Match your device setting", icon: Monitor },
     { value: "light", label: "Light", desc: "Bright background", icon: Sun },
-    { value: "dark", label: "Dark", desc: "Dim background", icon: Moon },
+    { value: "dark", label: "Dark", desc: "Dark background", icon: Moon },
   ];
 
   return (
@@ -256,7 +288,7 @@ const AppearanceDialog = ({
                 onClick={() => setTheme(value)}
                 className={[
                   "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-                  active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary/50",
+                  active ? "border-primary/60 bg-secondary/50" : "border-border hover:bg-secondary/40",
                 ].join(" ")}
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
@@ -266,7 +298,7 @@ const AppearanceDialog = ({
                   <p className="text-sm font-medium">{label}</p>
                   <p className="text-xs text-muted-foreground">{desc}</p>
                 </div>
-                {active && <Check className="h-4 w-4 text-primary" />}
+                {active && <Check className="h-4 w-4 text-foreground" />}
               </button>
             );
           })}
@@ -276,7 +308,7 @@ const AppearanceDialog = ({
   );
 };
 
-/* ───────────── Change Password (OTP flow) ───────────── */
+/* ── Change Password ── */
 const ChangePasswordDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
   const { user, resetPassword, verifyRecoveryOtp, updatePassword } = useAuth();
   const [stage, setStage] = useState<"intro" | "otp" | "new">("intro");
@@ -340,7 +372,7 @@ const ChangePasswordDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
             <DialogHeader>
               <DialogTitle>Change password</DialogTitle>
               <DialogDescription>
-                We'll email an 8-digit verification code to{" "}
+                We'll email a verification code to{" "}
                 <span className="font-medium text-foreground">{user?.email}</span>.
               </DialogDescription>
             </DialogHeader>
@@ -357,7 +389,7 @@ const ChangePasswordDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
           <>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" /> Enter code
+                <ShieldCheck className="h-5 w-5" /> Enter code
               </DialogTitle>
               <DialogDescription>
                 Enter the 8-digit code sent to{" "}

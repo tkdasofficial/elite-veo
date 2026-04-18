@@ -18,14 +18,14 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
     <div className="flex flex-1 flex-col overflow-y-auto">
       <div className="my-auto w-full max-w-2xl mx-auto flex flex-col items-center text-center px-4 py-12">
 
-        <h1 className="text-3xl sm:text-4xl font-normal text-foreground mb-2 tracking-tight">
+        <h1 className="text-3xl sm:text-[2.25rem] font-semibold text-foreground mb-2 tracking-tight">
           What can I help with?
         </h1>
-        <p className="text-sm text-muted-foreground mb-10 max-w-sm">
-          Chat, generate images, edit photos, search the web — all in one place.
+        <p className="text-sm text-muted-foreground mb-10">
+          Chat, generate images, edit photos, search the web.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 w-full">
           {suggestions.map((s, i) => {
             const Icon = s.icon;
             return (
@@ -33,9 +33,9 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
                 key={i}
                 data-testid={`suggestion-${i}`}
                 onClick={() => onSuggestionClick(s.text)}
-                className="flex items-center gap-3 rounded-xl border border-border px-4 py-3 text-left text-sm text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors"
+                className="flex items-center gap-3 rounded-xl bg-secondary/60 hover:bg-secondary px-4 py-3.5 text-left text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Icon className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                <Icon className="h-4 w-4 shrink-0 opacity-60" />
                 <span className="truncate">{s.text}</span>
               </button>
             );
