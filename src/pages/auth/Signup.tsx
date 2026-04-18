@@ -121,7 +121,7 @@ const Signup = () => {
 
           <div className="w-full">
             <OtpInput
-              length={6}
+              length={8}
               onComplete={handleVerifyOtp}
               disabled={otpVerifying}
               error={!!otpError}
