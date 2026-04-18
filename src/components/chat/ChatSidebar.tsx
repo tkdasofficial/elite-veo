@@ -9,6 +9,7 @@ import { Conversation } from "@/types/chat";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { isToday, isYesterday, subDays, isAfter } from "date-fns";
+import Logo from "@/components/Logo";
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -97,9 +98,8 @@ const ChatSidebar = ({
             className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-sidebar-accent/40 transition-colors min-w-0"
           >
             <div className="relative shrink-0">
-              <div className="absolute inset-0 rounded-lg bg-primary/40 blur-md scale-110" aria-hidden />
-              <div className="relative flex h-7 w-7 items-center justify-center rounded-lg overflow-hidden ring-1 ring-sidebar-border/60">
-                <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+              <div className="relative flex h-7 w-7 items-center justify-center">
+                <Logo />
               </div>
             </div>
             <span className="text-[13px] font-semibold text-sidebar-foreground tracking-tight truncate">

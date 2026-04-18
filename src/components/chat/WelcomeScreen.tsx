@@ -1,4 +1,5 @@
 import { ArrowRight, Sparkles, Image as ImageIcon, Search, Wand2, Film, Lightbulb } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const suggestions = [
   { icon: Film,      text: "Write a hook for a morning routine reel" },
@@ -21,8 +22,8 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
         {/* Logo with glow */}
         <div className="relative mb-5 sm:mb-6">
           <div className="absolute inset-0 rounded-2xl bg-primary/30 blur-2xl scale-110" aria-hidden />
-          <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/40">
-            <img src="/logo.png" alt="Elite Veo" className="h-full w-full object-cover" />
+          <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center">
+            <Logo />
           </div>
         </div>
 
