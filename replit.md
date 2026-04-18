@@ -2,6 +2,13 @@
 
 An AI-powered chat assistant built with React + Vite on the frontend and Supabase as the sole backend.
 
+## STRICT PROJECT RULES
+
+1. **Use Supabase as the only backend** — all data, auth, storage, and AI calls go through Supabase.
+2. **Use npm only** — no pnpm, yarn, or other package managers.
+3. **Do NOT use Replit Database, Replit Auth, or any other Replit-specific backend service.**
+4. **Supabase is the primary and only backend service** — no custom Express/Hono/Fastify servers, no Neon, no Drizzle.
+
 ## Architecture
 
 - **Frontend**: React 18, Vite, TailwindCSS, shadcn/ui, React Router v6, TanStack Query
