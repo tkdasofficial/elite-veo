@@ -131,3 +131,11 @@ html, body {
   animation: blink 1s infinite;
   color: hsl(var(--foreground));
 }
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
