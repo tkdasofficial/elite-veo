@@ -398,7 +398,7 @@ const ChatSidebar = ({
             <button
               data-testid="button-new-chat"
               onClick={onNewConversation}
-              className="flex items-center gap-2 rounded-full bg-sidebar-foreground px-4 py-2.5 text-sm font-semibold text-sidebar-background shadow-lg hover:opacity-90 active:scale-95 transition-all duration-150"
+              className="flex items-center gap-2 rounded-full bg-sidebar-primary px-4 py-2.5 text-sm font-semibold text-sidebar-primary-foreground shadow-lg hover:opacity-90 active:scale-95 transition-all duration-150"
             >
               <SquarePen className="h-4 w-4" />
               <span>New Chat</span>
