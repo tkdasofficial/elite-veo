@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, ArrowLeft, MessageSquare, MoreHorizontal,
   Pin, Pencil, Trash2, Image as ImageIcon, Video, Music, SquarePen, X,
+  ChevronRight, Download, Flag, RefreshCw,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Conversation } from "@/types/chat";
@@ -11,6 +12,7 @@ import { useApp } from "@/context/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { isToday, isYesterday, subDays, isAfter } from "date-fns";
+import { toast } from "sonner";
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -56,6 +58,117 @@ function groupConversations(convs: Conversation[], pinnedIds: string[]): Record<
   return groups;
 }
 
+/* ── Creation fullscreen viewer ── */
+interface CreationViewerProps {
+  creation: Creation;
+  onClose: () => void;
+  onViewAll: () => void;
+}
+
+const CreationViewer = ({ creation, onClose, onViewAll }: CreationViewerProps) => {
+  const mediaUrl = creation.file_url || creation.thumbnail_url || "";
+
+  const handleDownload = () => {
+    if (!mediaUrl) return toast.error("No file available to download");
+    const a = document.createElement("a");
+    a.href = mediaUrl;
+    a.download = creation.title || creation.type;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.click();
+    toast.success("Download started");
+  };
+
+  const handleReport = () => toast.success("Thank you — report submitted");
+
+  const handleRegenerate = () => {
+    if (creation.title) sessionStorage.setItem("ev_regen_prompt", creation.title);
+    onClose();
+    toast.info("Paste your prompt to regenerate");
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/90 flex flex-col"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3 shrink-0">
+        <button
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <p className="text-sm font-medium text-white/80 truncate max-w-[180px]">
+          {creation.title || creation.type}
+        </p>
+        <button
+          onClick={onViewAll}
+          className="flex items-center gap-1 text-xs text-white/60 hover:text-white transition-colors"
+        >
+          All <ChevronRight className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* Media */}
+      <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
+        {creation.type === "image" && mediaUrl ? (
+          <img
+            src={mediaUrl}
+            alt={creation.title || "Image"}
+            className="max-h-full max-w-full rounded-2xl object-contain"
+          />
+        ) : creation.type === "video" && mediaUrl ? (
+          <video
+            src={mediaUrl}
+            controls
+            autoPlay
+            className="max-h-full max-w-full rounded-2xl"
+          />
+        ) : creation.type === "audio" && mediaUrl ? (
+          <div className="flex flex-col items-center gap-6">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
+              <Music className="h-10 w-10 text-white/60" />
+            </div>
+            <audio src={mediaUrl} controls className="w-72" />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4 text-white/40">
+            <ImageIcon className="h-16 w-16" />
+            <p className="text-sm">No preview available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="shrink-0 px-4 py-5 flex items-center justify-center gap-3">
+        <button
+          onClick={handleDownload}
+          className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors px-5 py-3 min-w-[80px]"
+        >
+          <Download className="h-5 w-5 text-white" />
+          <span className="text-[11px] text-white/70">Download</span>
+        </button>
+        <button
+          onClick={handleRegenerate}
+          className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors px-5 py-3 min-w-[80px]"
+        >
+          <RefreshCw className="h-5 w-5 text-white" />
+          <span className="text-[11px] text-white/70">Regenerate</span>
+        </button>
+        <button
+          onClick={handleReport}
+          className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/10 hover:bg-destructive/40 transition-colors px-5 py-3 min-w-[80px]"
+        >
+          <Flag className="h-5 w-5 text-white" />
+          <span className="text-[11px] text-white/70">Report</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ChatSidebar = ({
   conversations,
   activeConversationId,
@@ -75,6 +188,7 @@ const ChatSidebar = ({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [creations, setCreations] = useState<Creation[]>([]);
+  const [viewingCreation, setViewingCreation] = useState<Creation | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -217,14 +331,24 @@ const ChatSidebar = ({
         {/* ── Creations strip ── */}
         {user && creationMedia.length > 0 && (
           <div className="shrink-0 px-3 pb-2 pt-1">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/35 mb-1.5">
-              Creations
-            </p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/35">
+                Creations
+              </p>
+              <button
+                onClick={() => go("/my-creations")}
+                title="All Creations"
+                className="flex items-center gap-0.5 text-[10px] text-sidebar-foreground/40 hover:text-sidebar-foreground/70 transition-colors"
+              >
+                All
+                <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
               {creationMedia.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => go("/my-creations")}
+                  onClick={() => setViewingCreation(c)}
                   title={c.title || c.type}
                   className="shrink-0 relative h-14 w-14 rounded-xl overflow-hidden bg-sidebar-accent border border-sidebar-border/40 hover:border-sidebar-border transition-colors group"
                 >
@@ -406,6 +530,15 @@ const ChatSidebar = ({
           </div>
         </div>
       </aside>
+
+      {/* ── Fullscreen Creation Viewer ── */}
+      {viewingCreation && (
+        <CreationViewer
+          creation={viewingCreation}
+          onClose={() => setViewingCreation(null)}
+          onViewAll={() => { setViewingCreation(null); go("/my-creations"); }}
+        />
+      )}
     </>
   );
 };

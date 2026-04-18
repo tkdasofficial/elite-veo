@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Menu, Settings, Video, FileText, Shield, LogOut } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatMessageComponent from "@/components/chat/ChatMessage";
@@ -16,7 +16,7 @@ const generateLocalId = () => "local-" + Math.random().toString(36).slice(2, 10)
 
 const ChatPage = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const {
     conversations,
@@ -33,7 +33,6 @@ const ChatPage = () => {
   } = useApp();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [workingState, setWorkingState] = useState<string | null>(null);
 
@@ -319,64 +318,13 @@ const ChatPage = () => {
 
   const ProfileAvatar = ({ className }: { className?: string }) =>
     user ? (
-      <div className="relative">
-        <button
-          onClick={() => setProfileMenuOpen((v) => !v)}
-          title="Account"
-          className={`shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold hover:ring-2 hover:ring-primary/40 transition-all ${className ?? ""}`}
-        >
-          {userInitials}
-        </button>
-
-        {profileMenuOpen && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setProfileMenuOpen(false)} />
-            <div className="absolute right-0 top-[calc(100%+6px)] z-40 w-52 rounded-2xl border border-border bg-popover shadow-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-border/50">
-                <p className="text-xs font-semibold text-foreground truncate">{user.name}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{user.email}</p>
-              </div>
-              <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/settings"); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <Settings className="h-4 w-4 shrink-0" />
-                Settings
-              </button>
-              <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/my-creations"); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <Video className="h-4 w-4 shrink-0" />
-                My Creations
-              </button>
-              <div className="h-px bg-border/50 mx-3" />
-              <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/terms"); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <FileText className="h-4 w-4 shrink-0" />
-                Terms
-              </button>
-              <button
-                onClick={() => { setProfileMenuOpen(false); navigate("/privacy"); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-foreground/60 hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <Shield className="h-4 w-4 shrink-0" />
-                Privacy
-              </button>
-              <div className="h-px bg-border/50 mx-3" />
-              <button
-                onClick={async () => { setProfileMenuOpen(false); await signOut(); navigate("/"); }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                Sign out
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+      <button
+        onClick={() => navigate("/settings")}
+        title="Settings"
+        className={`shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-semibold hover:ring-2 hover:ring-primary/40 transition-all ${className ?? ""}`}
+      >
+        {userInitials}
+      </button>
     ) : null;
 
   return (
