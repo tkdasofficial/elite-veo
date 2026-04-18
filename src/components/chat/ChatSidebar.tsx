@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, X, MessageSquare, MoreHorizontal,
-  Pin, Pencil, Trash2, Image as ImageIcon, Video, Music, SquarePen,
+  Search, ArrowLeft, MessageSquare, MoreHorizontal,
+  Pin, Pencil, Trash2, Image as ImageIcon, Video, Music, SquarePen, X,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Conversation } from "@/types/chat";
@@ -32,22 +32,16 @@ interface Creation {
 type Group = "Pinned" | "Today" | "Yesterday" | "Last 7 days" | "Older";
 
 const PINS_KEY = "ev_pinned_convs";
-
 function getPinned(): string[] {
   try { return JSON.parse(localStorage.getItem(PINS_KEY) || "[]"); } catch { return []; }
 }
 function setPinned(ids: string[]) {
   localStorage.setItem(PINS_KEY, JSON.stringify(ids));
 }
-
 function truncate(str: string, max = 12) {
   return str.length > max ? str.slice(0, max) + "..." : str;
 }
-
-function groupConversations(
-  convs: Conversation[],
-  pinnedIds: string[]
-): Record<Group, Conversation[]> {
+function groupConversations(convs: Conversation[], pinnedIds: string[]): Record<Group, Conversation[]> {
   const now = new Date();
   const groups: Record<Group, Conversation[]> = {
     Pinned: [], Today: [], Yesterday: [], "Last 7 days": [], Older: [],
@@ -86,7 +80,7 @@ const ChatSidebar = ({
   const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
+    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 80);
     else setQuery("");
   }, [searchOpen]);
 
@@ -117,6 +111,8 @@ const ChatSidebar = ({
 
   const go = (path: string) => { onClose(); navigate(path); };
 
+  const closeSearch = () => { setSearchOpen(false); setQuery(""); };
+
   const togglePin = (id: string) => {
     const next = pinnedIds.includes(id)
       ? pinnedIds.filter((p) => p !== id)
@@ -134,7 +130,7 @@ const ChatSidebar = ({
 
   const commitRename = async (id: string) => {
     const val = renameValue.trim();
-    if (val && val.length > 0) await updateConversationTitle(id, val);
+    if (val) await updateConversationTitle(id, val);
     setRenamingId(null);
     setRenameValue("");
   };
@@ -149,10 +145,7 @@ const ChatSidebar = ({
   return (
     <>
       {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onClose} />
       )}
 
       <aside
@@ -161,66 +154,69 @@ const ChatSidebar = ({
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-3 h-14 shrink-0">
-          <button
-            onClick={() => { onClose(); navigate("/"); }}
-            className="flex items-center px-1 rounded hover:opacity-70 transition-opacity"
-          >
-            <span className="text-base font-semibold text-sidebar-foreground">
-              Elite Veo
-            </span>
-          </button>
+        {/* ── Header: morphs into search bar when open ── */}
+        <div className="relative flex items-center h-14 shrink-0 overflow-hidden">
 
-          <div className="flex items-center gap-1">
+          {/* Normal header */}
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-between px-4 transition-all duration-250",
+              searchOpen ? "opacity-0 pointer-events-none translate-y-[-100%]" : "opacity-100 translate-y-0"
+            )}
+          >
             <button
-              onClick={() => setSearchOpen((v) => !v)}
+              onClick={() => { onClose(); navigate("/"); }}
+              className="flex items-center rounded hover:opacity-70 transition-opacity"
+            >
+              <span className="text-base font-semibold text-sidebar-foreground">Elite Veo</span>
+            </button>
+
+            <button
+              onClick={() => setSearchOpen(true)}
               title="Search"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
             >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-            </button>
-            <button
-              data-testid="button-new-chat"
-              onClick={onNewConversation}
-              title="New chat"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-            >
-              <SquarePen className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </button>
           </div>
-        </div>
 
-        {/* Search bar — animated expand */}
-        <div
-          className={cn(
-            "overflow-hidden transition-all duration-200 px-3",
-            searchOpen ? "max-h-14 pb-2 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
-          )}
-        >
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40 pointer-events-none" />
-            <input
-              ref={searchInputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search chats..."
-              className="w-full h-9 rounded-xl bg-sidebar-accent/60 pl-8 pr-7 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none border border-transparent focus:border-sidebar-border/60 transition-colors"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-sidebar-foreground/40 hover:text-sidebar-foreground"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+          {/* Search header — full width */}
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center gap-2 px-3 transition-all duration-250",
+              searchOpen ? "opacity-100 translate-y-0" : "opacity-0 pointer-events-none translate-y-[100%]"
             )}
+          >
+            <button
+              onClick={closeSearch}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+
+            <div className="relative flex-1">
+              <input
+                ref={searchInputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search"
+                className="w-full h-9 rounded-2xl bg-sidebar-accent/70 px-4 text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none border border-transparent focus:border-sidebar-border/50 transition-colors"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/40 hover:text-sidebar-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Creations strip */}
+        {/* ── Creations strip ── */}
         {user && creationMedia.length > 0 && (
-          <div className="shrink-0 px-3 pb-2">
+          <div className="shrink-0 px-3 pb-2 pt-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/35 mb-1.5">
               Creations
             </p>
@@ -232,19 +228,15 @@ const ChatSidebar = ({
                   title={c.title || c.type}
                   className="shrink-0 relative h-14 w-14 rounded-xl overflow-hidden bg-sidebar-accent border border-sidebar-border/40 hover:border-sidebar-border transition-colors group"
                 >
-                  {c.type === "image" && c.thumbnail_url ? (
+                  {(c.type === "image" || c.type === "video") && c.thumbnail_url ? (
                     <img
                       src={c.thumbnail_url}
-                      alt={c.title || "Image"}
+                      alt={c.title || c.type}
                       className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : c.type === "video" ? (
                     <div className="h-full w-full flex items-center justify-center">
-                      {c.thumbnail_url ? (
-                        <img src={c.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <Video className="h-5 w-5 text-sidebar-foreground/40" />
-                      )}
+                      <Video className="h-5 w-5 text-sidebar-foreground/40" />
                     </div>
                   ) : c.type === "audio" ? (
                     <div className="h-full w-full flex items-center justify-center">
@@ -261,7 +253,7 @@ const ChatSidebar = ({
           </div>
         )}
 
-        {/* Conversation list */}
+        {/* ── Conversation list ── */}
         <ScrollArea className="flex-1 px-2">
           {conversations.length === 0 ? (
             <div className="px-3 py-16 text-center">
@@ -320,9 +312,7 @@ const ChatSidebar = ({
                                   {isPinned && (
                                     <Pin className="h-2.5 w-2.5 shrink-0 text-sidebar-foreground/40 rotate-45" />
                                   )}
-                                  <span className="block truncate">
-                                    {truncate(conv.title)}
-                                  </span>
+                                  <span className="block truncate">{truncate(conv.title)}</span>
                                 </div>
                               </button>
                             )}
@@ -346,10 +336,7 @@ const ChatSidebar = ({
 
                             {isMenuOpen && (
                               <>
-                                <div
-                                  className="fixed inset-0 z-10"
-                                  onClick={() => setMenuOpenId(null)}
-                                />
+                                <div className="fixed inset-0 z-10" onClick={() => setMenuOpenId(null)} />
                                 <div className="absolute right-0 top-full mt-0.5 z-20 w-40 rounded-xl border border-sidebar-border bg-popover shadow-xl overflow-hidden">
                                   <button
                                     onClick={() => togglePin(conv.id)}
@@ -387,23 +374,37 @@ const ChatSidebar = ({
           )}
         </ScrollArea>
 
-        {/* Bottom — unauthenticated only */}
-        {!user && (
-          <div className="shrink-0 border-t border-sidebar-border px-3 py-3 space-y-1">
+        {/* ── Bottom area ── */}
+        <div className="shrink-0 relative px-3 py-3">
+          {!user && (
+            <div className="space-y-1 mb-2">
+              <button
+                onClick={() => go("/signup")}
+                className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                Get Started — it's free
+              </button>
+              <button
+                onClick={() => go("/login")}
+                className="w-full rounded-xl py-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+
+          {/* New Chat FAB — bottom right */}
+          <div className="flex justify-end">
             <button
-              onClick={() => go("/signup")}
-              className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+              data-testid="button-new-chat"
+              onClick={onNewConversation}
+              className="flex items-center gap-2 rounded-full bg-sidebar-foreground px-4 py-2.5 text-sm font-semibold text-sidebar-background shadow-lg hover:opacity-90 active:scale-95 transition-all duration-150"
             >
-              Get Started — it's free
-            </button>
-            <button
-              onClick={() => go("/login")}
-              className="w-full rounded-xl py-2 text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-            >
-              Sign In
+              <SquarePen className="h-4 w-4" />
+              <span>New Chat</span>
             </button>
           </div>
-        )}
+        </div>
       </aside>
     </>
   );
