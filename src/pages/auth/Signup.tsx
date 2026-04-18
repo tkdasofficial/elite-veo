@@ -114,7 +114,7 @@ const Signup = () => {
           <div>
             <p className="text-xl font-bold text-foreground mb-1">Verify your email</p>
             <p className="text-sm text-muted-foreground">
-              Enter the 6-digit code we sent to{" "}
+              Enter the 8-digit code we sent to{" "}
               <span className="font-semibold text-foreground break-all">{email}</span>
             </p>
           </div>

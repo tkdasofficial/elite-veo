@@ -191,7 +191,7 @@ const ForgotPassword = () => {
           <div>
             <p className="text-xl font-bold text-foreground mb-1">Enter reset code</p>
             <p className="text-sm text-muted-foreground">
-              We sent a 6-digit code to{" "}
+              We sent an 8-digit code to{" "}
               <span className="font-semibold text-foreground break-all">{email}</span>
             </p>
           </div>
